@@ -1,7 +1,6 @@
 #include<stdio.h>
 
-// a. Fibonacci series using iteration
-
+// a. Fibonacci series using iteration ----> time - O(n)
 int fib_iteration(int n)
 {
   int t0=0, t1=1, s=0, i;
@@ -16,9 +15,7 @@ int fib_iteration(int n)
   return s;
 }
 
-// b. Fibonacci series using basic recursion(excessive recursion)
-
-#include<stdio.h>
+// b. Fibonacci series using basic recursion(excessive recursion) ----> time - O(2^n)
 int fib_recursion(int n)
 {
   if(n<=1)
@@ -26,7 +23,7 @@ int fib_recursion(int n)
   return fib_recursion(n-2)+fib_recursion(n-1);
 }
 
-// c. Fibonacci series using memoization
+// c. Fibonacci series using memoization ----> time - O(n)
 int F[10];
 
 int fib_memoization(int n)
@@ -44,9 +41,9 @@ int fib_memoization(int n)
       F[n-1] == fib_memoization(n-1);
     return fib_memoization(n-2) + fib_memoization(n-1);
   }
+}
 
 // Main function
-}
 void main()
 {
   // loop is for memoization
