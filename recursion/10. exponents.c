@@ -1,7 +1,6 @@
 #include<stdio.h>
 
 // a. Basic recursion ----> time - O(n), space - O(n)
-
 int pow_basic(int m, int n)
 {
   if(n > 0)
@@ -12,7 +11,6 @@ int pow_basic(int m, int n)
 }
 
 // b. Faster recursion ----> time - O(logn), space - O(logn)
-
 int pow_fast(int m, int n)
 {
   if(n == 0)
@@ -23,6 +21,7 @@ int pow_fast(int m, int n)
     return m * pow_fast(m * m, (n - 1) / 2);
 }
 
+// main function
 void main()
 {
   printf("Basic Recursion: %d\n", pow_basic(3, 4));
