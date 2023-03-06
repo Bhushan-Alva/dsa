@@ -22,6 +22,7 @@ int pow_fast(int m, int n)
   else
     return m * pow_fast(m * m, (n - 1) / 2);
 }
+
 void main()
 {
   printf("Basic Recursion: %d\n", pow_basic(3, 4));
