@@ -1,0 +1,29 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void main()
+{
+    int *p, *q;
+    int i;
+    p = (int *)malloc(5 * sizeof(int));
+    p[0]=3; p[1]=5; p[2]=7; p[3]=9; p[4]=11;
+
+    // create new array of bigger size
+    q = (int *)malloc(10 * sizeof(int));
+
+    // copy from p to q
+    for(i=0; i<5; i++)
+    {
+        q[i] = p[i];
+    }
+
+    // delete p array and make p point to q and make q null
+    free(p);
+    p=q;
+    q=NULL;
+
+    for(i=0; i<5; i++)
+    {
+        printf("%d\t", p[i]);
+    }
+}
