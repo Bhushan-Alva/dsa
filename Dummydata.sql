@@ -1,65 +1,43 @@
--- Generate 15 rows for reservation_status table
-INSERT INTO reservation_status (id, status_value)
-SELECT LEVEL, 'Status ' || LEVEL
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into reservation_status table
+INSERT INTO reservation_status (id, status_value) VALUES (1, 'Active');
+INSERT INTO reservation_status (id, status_value) VALUES (2, 'Cancelled');
 
--- Generate 15 rows for category table
-INSERT INTO category (id, category_name)
-SELECT LEVEL, 'Category ' || LEVEL
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into category table
+INSERT INTO category (id, category_name) VALUES (1, 'Fiction');
+INSERT INTO category (id, category_name) VALUES (2, 'Non-Fiction');
 
--- Generate 15 rows for book table
-INSERT INTO book (id, title, category_id, publication_date, copies_owned)
-SELECT LEVEL, 'Book ' || LEVEL, MOD(LEVEL, 2) + 1, SYSDATE - LEVEL, LEVEL * 10
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into book table
+INSERT INTO book (id, title, category_id, publication_date, copies_owned) VALUES (1, 'Sample Fiction Book', 1, TO_DATE('2023-01-01', 'YYYY-MM-DD'), 100);
+INSERT INTO book (id, title, category_id, publication_date, copies_owned) VALUES (2, 'Sample Non-Fiction Book', 2, TO_DATE('2023-02-01', 'YYYY-MM-DD'), 150);
 
--- Generate 15 rows for author table
-INSERT INTO author (id, first_name, last_name)
-SELECT LEVEL, 'AuthorFirstName ' || LEVEL, 'AuthorLastName ' || LEVEL
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into author table
+INSERT INTO author (id, first_name, last_name) VALUES (1, 'John', 'Doe');
+INSERT INTO author (id, first_name, last_name) VALUES (2, 'Jane', 'Smith');
 
--- Generate 15 rows for book_author table
-INSERT INTO book_author (book_id, author_id)
-SELECT MOD(LEVEL, 15) + 1, MOD(LEVEL, 15) + 1
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into book_author table
+INSERT INTO book_author (book_id, author_id) VALUES (1, 1);
+INSERT INTO book_author (book_id, author_id) VALUES (2, 2);
 
--- Generate 15 rows for member_status table
-INSERT INTO member_status (id, status_value)
-SELECT LEVEL, 'MemberStatus ' || LEVEL
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into member_status table
+INSERT INTO member_status (id, status_value) VALUES (1, 'Active');
+INSERT INTO member_status (id, status_value) VALUES (2, 'Inactive');
 
--- Generate 15 rows for member table
-INSERT INTO member (id, first_name, last_name, joined_date, active_status_id)
-SELECT LEVEL, 'MemberFirstName ' || LEVEL, 'MemberLastName ' || LEVEL, SYSDATE - LEVEL, MOD(LEVEL, 2) + 1
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into member table
+INSERT INTO member (id, first_name, last_name, joined_date, active_status_id) VALUES (1, 'Alice', 'Johnson', TO_DATE('2022-01-15', 'YYYY-MM-DD'), 1);
+INSERT INTO member (id, first_name, last_name, joined_date, active_status_id) VALUES (2, 'Bob', 'Smith', TO_DATE('2021-11-20', 'YYYY-MM-DD'), 2);
 
--- Generate 15 rows for reservation table
-INSERT INTO reservation (id, book_id, member_id, reservation_date, reservation_status_id)
-SELECT LEVEL, MOD(LEVEL, 15) + 1, MOD(LEVEL, 15) + 1, SYSDATE - LEVEL, MOD(LEVEL, 15) + 1
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into reservation table
+INSERT INTO reservation (id, book_id, member_id, reservation_date, reservation_status_id) VALUES (1, 1, 1, TO_DATE('2023-03-10', 'YYYY-MM-DD'), 1);
+INSERT INTO reservation (id, book_id, member_id, reservation_date, reservation_status_id) VALUES (2, 2, 2, TO_DATE('2023-03-12', 'YYYY-MM-DD'), 1);
 
--- Generate 15 rows for fine_payment table
-INSERT INTO fine_payment (id, member_id, payment_date, payment_amount)
-SELECT LEVEL, MOD(LEVEL, 15) + 1, SYSDATE - LEVEL, LEVEL * 5
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into fine_payment table
+INSERT INTO fine_payment (id, member_id, payment_date, payment_amount) VALUES (1, 1, TO_DATE('2023-03-15', 'YYYY-MM-DD'), 10);
+INSERT INTO fine_payment (id, member_id, payment_date, payment_amount) VALUES (2, 2, TO_DATE('2023-03-16', 'YYYY-MM-DD'), 15);
 
--- Generate 15 rows for loan table
-INSERT INTO loan (id, book_id, member_id, loan_date, returned_date)
-SELECT LEVEL, MOD(LEVEL, 15) + 1, MOD(LEVEL, 15) + 1, SYSDATE - LEVEL, SYSDATE - LEVEL + 5
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into loan table
+INSERT INTO loan (id, book_id, member_id, loan_date, returned_date) VALUES (1, 1, 1, TO_DATE('2023-02-20', 'YYYY-MM-DD'), TO_DATE('2023-03-05', 'YYYY-MM-DD'));
+INSERT INTO loan (id, book_id, member_id, loan_date, returned_date) VALUES (2, 2, 2, TO_DATE('2023-01-25', 'YYYY-MM-DD'), TO_DATE('2023-02-10', 'YYYY-MM-DD'));
 
--- Generate 15 rows for fine table
-INSERT INTO fine (id, book_id, loan_id, fine_date, fine_amount)
-SELECT LEVEL, MOD(LEVEL, 15) + 1, MOD(LEVEL, 15) + 1, SYSDATE - LEVEL, LEVEL * 2
-FROM DUAL
-CONNECT BY LEVEL <= 15;
+-- Insert data into fine table
+INSERT INTO fine (id, book_id, loan_id, fine_date, fine_amount) VALUES (1, 1, 1, TO_DATE('2023-03-08', 'YYYY-MM-DD'), 5);
+INSERT INTO fine (id, book_id, loan_id, fine_date, fine_amount) VALUES (2, 2, 2, TO_DATE('2023-02-28', 'YYYY-MM-DD'), 8);
