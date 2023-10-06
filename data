@@ -1,0 +1,164 @@
+select * from tab;
+
+insert into agency values(100, 'bangalore');
+
+insert into agency values(200, 'chennai');
+
+insert into agency values(300, 'hyderabad');
+
+select * from agency;
+
+
+
+insert into vehicles values(10, 'maruti swift dzire');
+
+insert into vehicles values(20, 'toyota etios');
+
+insert into vehicles values(30, 'toyota innova');
+
+insert into vehicles values(40, 'tata indica');
+
+insert into vehicles values(50, 'ford figo');
+
+select * from vehicles;
+
+
+
+insert into customers values(1000, 'smith', 'mysore', 5648654565, 100);
+
+insert into customers values(1001, 'allen', 'warangal', 5648654566, 300);
+
+insert into customers values(1003, 'ward', 'bidar', 5648654567, 300);
+
+insert into customers values(1004, 'jones', 'tripura', 5648654569, 200);
+
+insert into customers values(1005, 'martin', 'pondicherry', 5648654519, 200);
+
+insert into customers values(1006, 'blake', 'bangalore', 5648624519, 100);
+
+insert into customers values(1007, 'clark', 'bangalore', 5648924519, 100);
+
+insert into customers values(1008, 'scott', 'mangalore', 7848924519, 100);
+
+insert into customers values(1009, 'king', 'chennai', 5669624519, 200);
+
+insert into customers values(1010, 'turner', 'nizamabad', 5669994519, 300);
+
+insert into customers values(1011, 'adams', 'hyderabad', 5669999919, 300);
+
+insert into customers values(1012, 'james', 'chennai', 9999999919, 200);
+
+insert into customers values(1013, 'ford', 'bangalore', 9999777919, 100);
+
+insert into customers values(1014, 'miller', 'tumkur', 9998777919, 100);
+
+
+select * from customers;
+
+
+
+insert into rentals values(1,'09-AUG-2020', '10-SEP-2020', 1000, 100);
+
+insert into rentals values(2,'11-dec-2020', '30-DEC-2020', 1000, 100);
+
+insert into rentals values(3,'17-SEP-2021', '10-JAN-2022', 1006, 100);
+
+insert into rentals values(4,'19-OCT-2021', '31-OCT-2021', 1005, 200);
+
+insert into rentals values(5,'1-OCT-2020', '31-OCT-2020', 1011, 300);
+
+insert into rentals values(6,'5-APRIL-2021', '10-JUNE-2021', 1009, 200);
+
+insert into rentals values(7,'14-NOV-2021', '30-DEC-2021', 1003, 300);
+
+insert into rentals values(8,'3-DEC-2021', '14-JAN-2022', 1010, 300);
+
+insert into rentals values(9,'5-JAN-2021', '9-FEB-2021', 1014, 100);
+
+insert into rentals values(10,'8-JAN-2021', '18-JUN-2021', 1012, 200);
+
+insert into rentals values(11,'1-JULY-2021', '9-AUG-2021', 1013, 100);
+
+insert into rentals values(12,'26-JUNE-2020', '10-OCT-2020', 1007, 100);
+
+insert into rentals values(13,'3-MAR-2020', '23-MAY-2020', 1001, 300);
+
+insert into rentals values(14,'22-DEC-2021', '2-JAN-2022', 1004, 200);
+
+insert into rentals values(15,'1-AUG-2021', '7-OCT-2021', 1008, 100);
+
+insert into rentals values(16,'5-AUG-2021', '4-OCT-2021', 1007, 100);
+
+insert into rentals values(17,'1-NOV-2021', '15-DEC-2021', 1007, 100);
+
+select * from RENTALs;
+
+
+
+insert into mod_pay values(100, 0);
+
+insert into mod_pay values(200, 1500);
+
+insert into mod_pay values(300, 3000);
+
+insert into mod_pay values(400, 5000);
+
+select * from mod_pay;
+
+
+insert into rent_payment values(1, 1000, 2000, 100);
+
+insert into rent_payment values(2, 1000, 1000, 100);
+
+insert into rent_payment values(3, 1006, 4000, 200);
+
+insert into rent_payment values(4, 1005, 1000, 100);
+
+insert into rent_payment values(5, 1011, 1000, 100);
+
+insert into rent_payment values(6, 1009, 3000, 100);
+
+insert into rent_payment values(7, 1003, 2000, 100);
+
+insert into rent_payment values(8, 1010, 2000, 100);
+
+insert into rent_payment values(9, 1014, 2000, 100);
+
+insert into rent_payment values(10, 1012, 5000, 300);
+
+insert into rent_payment values(11, 1013, 2000, 100);
+
+insert into rent_payment values(12, 1007, 4000, 200);
+
+insert into rent_payment values(13, 1001, 3000, 100);
+
+insert into rent_payment values(14, 1004, 1000, 100);
+
+insert into rent_payment values(15, 1008, 3000, 100);
+
+insert into rent_payment values(16, 1007, 2000, 100);
+
+insert into rent_payment values(17, 1007, 2000, 100);
+
+select * from rent_payment;
+
+
+commit;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
