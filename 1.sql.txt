@@ -1,0 +1,96 @@
+CREATE TABLE Agency (
+       Agency_id            NUMBER(4) NOT NULL,
+       Agency_Loc           VARCHAR2(20) NOT NULL
+);
+
+
+ALTER TABLE Agency
+       ADD  ( PRIMARY KEY (Agency_id) ) ;
+
+
+CREATE TABLE Customers (
+       Customer_id          NUMBER(4) NOT NULL,
+       Customer_Name        VARCHAR2(20) NULL,
+       Customer_Address     VARCHAR2(50) NULL,
+       Customer_Number      NUMBER(10) NULL,
+       Agency_id            NUMBER(4) NOT NULL
+);
+
+
+ALTER TABLE Customers
+       ADD  ( PRIMARY KEY (Customer_id) ) ;
+
+
+CREATE TABLE Mod_Pay (
+       Mod_id               NUMBER(4) NOT NULL,
+       Mod_Payment          NUMBER(10) NOT NULL
+);
+
+
+ALTER TABLE Mod_Pay
+       ADD  ( PRIMARY KEY (Mod_id) ) ;
+
+
+CREATE TABLE Rent_Payment (
+       Rental_id            NUMBER(4) NOT NULL,
+       Customer_id          NUMBER(4) NOT NULL,
+       Payment              NUMBER(10) NOT NULL,
+       Mod_id               NUMBER(4) NULL
+);
+
+
+ALTER TABLE Rent_Payment
+       ADD  ( PRIMARY KEY (Rental_id) ) ;
+
+
+CREATE TABLE Rentals (
+       Rental_id            NUMBER(4) NOT NULL,
+       Rent_Srt_Date        DATE NOT NULL,
+       Rent_Ret_Date        DATE NULL,
+       Customer_id          NUMBER(4) NOT NULL,
+       Agency_id            NUMBER(4) NOT NULL
+);
+
+
+ALTER TABLE Rentals
+       ADD  ( PRIMARY KEY (Rental_id) ) ;
+
+
+CREATE TABLE Vehicles (
+       Vehicle_id           NUMBER(4) NOT NULL,
+       Vehicle_Name         VARCHAR2(50) NULL
+);
+
+
+ALTER TABLE Vehicles
+       ADD  ( PRIMARY KEY (Vehicle_id) ) ;
+
+
+ALTER TABLE Customers
+       ADD  ( FOREIGN KEY (Agency_id)
+                             REFERENCES Agency ) ;
+
+
+ALTER TABLE Rent_Payment
+       ADD  ( FOREIGN KEY (Rental_id)
+                             REFERENCES Rentals ) ;
+
+
+ALTER TABLE Rent_Payment
+       ADD  ( FOREIGN KEY (Mod_id)
+                             REFERENCES Mod_Pay ) ;
+
+
+ALTER TABLE Rent_Payment
+       ADD  ( FOREIGN KEY (Customer_id)
+                             REFERENCES Customers ) ;
+
+
+ALTER TABLE Rentals
+       ADD  ( FOREIGN KEY (Customer_id)
+                             REFERENCES Customers ) ;
+
+
+ALTER TABLE Rentals
+       ADD  ( FOREIGN KEY (Agency_id)
+                             REFERENCES Agency ) ;
