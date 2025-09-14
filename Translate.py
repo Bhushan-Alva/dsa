@@ -8,31 +8,17 @@ def translate_folder(input_folder: str,
                      data_sheet: str = "raw_data",
                      translation_sheet: str = "translations") -> None:
     """
-    Translate every .xlsb file in `input_folder` using lookups
-    from `translation_file` and save results to `output_folder`.
-
-    Each output file name is "<original name> - translated.xlsx".
-    An unmapped_values.xlsx is also created listing all unknown values.
-
-    Parameters
-    ----------
-    input_folder : str
-        Folder path containing the data files to translate (.xlsb).
-    output_folder : str
-        Folder path where translated files will be saved.
-    translation_file : str
-        Path to the workbook that holds the 'translations' sheet.
-    data_sheet : str, default 'raw_data'
-        Name of the sheet in each input file that needs translation.
-    translation_sheet : str, default 'translations'
-        Name of the sheet that holds header & value lookups.
+    Translate all .xlsb files in `input_folder` using lookups in `translation_file`.
+    Output files go to `output_folder` with ' - translated.xlsx' appended.
+    Creates a single unmapped.xlsx with two columns:
+        UnmappedHeader | UnmappedValue
     """
 
     input_path = Path(input_folder)
     output_path = Path(output_folder)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    # ---------- Cleaning helper ----------
+    # ---------- Cleaner ----------
     def clean_text(x):
         if not isinstance(x, str):
             return x
@@ -41,7 +27,7 @@ def translate_folder(input_folder: str,
         x = re.sub(r"\s+", " ", x)
         return x.strip()
 
-    # ---------- Load and clean lookup ----------
+    # ---------- Load lookups ----------
     lookup = pd.read_excel(translation_file,
                            sheet_name=translation_sheet,
                            engine="pyxlsb").map(clean_text)
@@ -50,27 +36,38 @@ def translate_folder(input_folder: str,
     value_lookup  = lookup.iloc[:, [9, 10]].dropna(how="any")
 
     header_map = dict(zip(header_lookup.iloc[:, 0], header_lookup.iloc[:, 2]))
-    code_map   = dict(zip(header_lookup.iloc[:, 1], header_lookup.iloc[:, 2]))
-    value_map  = dict(zip(value_lookup.iloc[:, 0],  value_lookup.iloc[:, 1]))
+    code_map   = {str(k).upper(): v for k, v in
+                  zip(header_lookup.iloc[:, 1], header_lookup.iloc[:, 2])}
+    value_map  = dict(zip(value_lookup.iloc[:, 0], value_lookup.iloc[:, 1]))
 
-    # ---------- Per-file translator ----------
-    def translate_file(file_path: Path, missing_set: set) -> pd.DataFrame:
-        # read and clean
+    # regex to capture code inside brackets, e.g. (~WFH1)
+    code_pattern = re.compile(r"\(~\s*([^)]+?)\s*\)")
+
+    # to collect all unknowns
+    unmapped_headers = set()
+    unmapped_values  = set()
+
+    def translate_file(file_path: Path) -> pd.DataFrame:
         df = pd.read_excel(file_path, sheet_name=data_sheet, engine="pyxlsb")
         df.columns = [clean_text(c) for c in df.columns]
         df = df.map(clean_text)
 
-        # header translation
+        # ---- header translator ----
         def translate_header(col):
             if col in header_map:
                 return header_map[col]
-            for code, eng in code_map.items():
-                if col.endswith(code[-5:]):
-                    return eng
-            return col
+            # extract bracket code e.g. (~WFH1)
+            m = code_pattern.search(col)
+            if m:
+                bracket_code = "~" + m.group(1).upper()
+                if bracket_code in code_map:
+                    return code_map[bracket_code]
+            unmapped_headers.add(col)
+            return col  # leave original if not found
+
         df.columns = [translate_header(c) for c in df.columns]
 
-        # value translation with multi-choice & missing log
+        # ---- value translator ----
         def translate_cell(x):
             if not isinstance(x, str):
                 return x
@@ -80,24 +77,25 @@ def translate_folder(input_folder: str,
                 if p in value_map:
                     out.append(value_map[p])
                 else:
-                    missing_set.add(p)
+                    unmapped_values.add(p)
                     out.append(p)
             return "; ".join(out)
 
         return df.map(translate_cell)
 
-    # ---------- Process all files ----------
-    missing_values = set()
-
+    # ---------- Process every file ----------
     for f in input_path.glob("*.xlsb"):
-        print(f"Translating: {f.name}")
-        translated_df = translate_file(f, missing_values)
+        print(f"Translating {f.name}")
+        translated = translate_file(f)
         out_name = f.stem + " - translated.xlsx"
-        translated_df.to_excel(output_path / out_name, index=False)
+        translated.to_excel(output_path / out_name, index=False)
 
-    # ---------- Save all unmapped values ----------
-    if missing_values:
-        pd.DataFrame(sorted(missing_values), columns=["UnmappedValue"])\
-            .to_excel(output_path / "unmapped_values.xlsx", index=False)
+    # ---------- Save combined unmapped data ----------
+    if unmapped_headers or unmapped_values:
+        pd.DataFrame({
+            "UnmappedHeader": sorted(unmapped_headers) or [""],
+            "UnmappedValue":  sorted(unmapped_values)  or [""]
+        }).to_excel(output_path / "unmapped.xlsx", index=False)
 
-    print(f"✅ Completed. Output saved in: {output_path.resolve()}")
+    print(f"✅ Completed. Results saved in {output_path.resolve()}")
+                       
