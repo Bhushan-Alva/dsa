@@ -64,3 +64,26 @@ def load_expense_zips(
 
     return pd.concat(data_list, ignore_index=True)
   
+import pandas as pd
+
+
+def normalize_columns(df, column_mapping):
+    return df.rename(columns={
+        col: column_mapping[col]
+        for col in df.columns
+        if col in column_mapping
+    })
+
+
+def apply_type_mapping(df, dtype_mapping):
+    for col, dtype in dtype_mapping.items():
+        if col not in df.columns:
+            raise KeyError(f"Missing required column: {col}")
+
+        if dtype.startswith("datetime"):
+            df[col] = pd.to_datetime(df[col], errors="coerce")
+        else:
+            df[col] = df[col].astype(dtype)
+
+    return df
+    
