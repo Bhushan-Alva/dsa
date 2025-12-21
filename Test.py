@@ -150,3 +150,99 @@ def load_market_unit_mapping(
 
     return dict(zip(keys, values))
     
+LOOKUP_CONFIG = {
+    "project_group_type": {
+        "sheet": "Project Group Type Mapping",
+        "key_col": 0,
+        "value_col": 1
+    },
+    "legal_entity_country": {
+        "sheet": "Legal entity Country Mapping",
+        "key_col": 0,
+        "value_col": 1
+    },
+    "market_unit": {
+        "sheet": "Market Unit Mapping",
+        "key_col": 0,
+        "value_col": 1
+    },
+    "private_car_source": {
+        "sheet": "Private - Source Mapping",
+        "key_col": 0,
+        "value_col": 3
+    },
+    "private_car_type": {
+        "sheet": "Private - Source Mapping",
+        "key_col": 0,
+        "value_col": 4
+    },
+    "legal_entity": {
+        "sheet": "Legal Entity Mapping",
+        "key_col": 4,
+        "value_col": 7
+    },
+    "gbl": {
+        "sheet": "Legal Entity Mapping",
+        "key_col": 4,
+        "value_col": 6
+    },
+    "bu_label": {
+        "sheet": "Legal Entity Mapping",
+        "key_col": 4,
+        "value_col": 5
+    },
+    "currency_conversion": {
+        "sheet": "Currency conversion Mapping",
+        "key_col": 0,
+        "value_col": 3
+    },
+    "currency": {
+        "sheet": "Currency Mapping",
+        "key_col": 0,
+        "value_col": 2
+    },
+    "to_be_uploaded": {
+        "sheet": "To be uploaded",
+        "key_col": 0,
+        "value_col": 3
+    }
+}
+def load_all_lookups(lookup_path: str, lookup_config: dict) -> dict:
+    """
+    Load all lookup mappings defined in lookup_config.
+    Returns a dict of lookup_name -> mapping_dict
+    """
+    lookups = {}
+    errors = {}
+
+    for name, cfg in lookup_config.items():
+        try:
+            lookups[name] = load_lookup_mapping(
+                lookup_path=lookup_path,
+                sheet_name=cfg["sheet"],
+                key_col=cfg["key_col"],
+                value_col=cfg["value_col"]
+            )
+        except Exception as e:
+            errors[name] = str(e)
+
+    if errors:
+        raise RuntimeError(
+            "Failed to load one or more lookup tables:\n" +
+            "\n".join(f"{k}: {v}" for k, v in errors.items())
+        )
+
+    return lookups
+    lookups = load_all_lookups(lookup_path, LOOKUP_CONFIG)
+
+project_group_type_lookup = lookups["project_group_type"]
+legal_entity_country_lookup = lookups["legal_entity_country"]
+market_unit_lookup = lookups["market_unit"]
+private_car_source_lookup = lookups["private_car_source"]
+private_car_type_lookup = lookups["private_car_type"]
+legal_entity_lookup = lookups["legal_entity"]
+gbl_lookup = lookups["gbl"]
+bu_label_lookup = lookups["bu_label"]
+currency_conversion_lookup = lookups["currency_conversion"]
+currency_mapping_lookup = lookups["currency"]
+to_be_uploaded_lookup = lookups["to_be_uploaded"]
