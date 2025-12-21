@@ -246,3 +246,58 @@ bu_label_lookup = lookups["bu_label"]
 currency_conversion_lookup = lookups["currency_conversion"]
 currency_mapping_lookup = lookups["currency"]
 to_be_uploaded_lookup = lookups["to_be_uploaded"]
+
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
+def calculate_departure_date(report_extract_date, transaction_date):
+    """
+    Business rule:
+    - If transaction date is older than 2 months from report extract date,
+      departure date = first day of (report_extract_date - 2 months)
+    - Else departure date = transaction date
+    """
+
+    if report_extract_date is None or transaction_date is None:
+        return None
+
+    if not isinstance(report_extract_date, datetime) or not isinstance(transaction_date, datetime):
+        return None
+
+    month_diff = (
+        (report_extract_date.year - transaction_date.year) * 12
+        + (report_extract_date.month - transaction_date.month)
+    )
+
+    if month_diff > 2:
+        edate = report_extract_date - relativedelta(months=2)
+        return datetime(edate.year, edate.month, 1)
+
+    return transaction_date
+
+import pandas as pd
+from dateutil.relativedelta import relativedelta
+
+# Ensure datetime
+data['Report Extract Date'] = pd.to_datetime(data['Report Extract Date'], errors='coerce')
+data['Transaction Date'] = pd.to_datetime(data['Transaction Date'], errors='coerce')
+
+# Month difference
+month_diff = (
+    (data['Report Extract Date'].dt.year - data['Transaction Date'].dt.year) * 12
+    + (data['Report Extract Date'].dt.month - data['Transaction Date'].dt.month)
+)
+
+# Default departure date
+data['Departure Date'] = data['Transaction Date']
+
+# Condition
+mask = month_diff > 2
+
+# Calculate capped date
+capped_date = (
+    data.loc[mask, 'Report Extract Date']
+    - pd.DateOffset(months=2)
+)
+
+data.loc[mask, 'Departure Date'] = capped_date.dt.to_period('M').dt.to_timestamp()
