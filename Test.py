@@ -301,3 +301,47 @@ capped_date = (
 )
 
 data.loc[mask, 'Departure Date'] = capped_date.dt.to_period('M').dt.to_timestamp()
+
+
+
+
+
+import pandas as pd
+
+def calculate_departure_date(
+    transaction_date: pd.Series,
+    report_extract_date: pd.Series
+) -> pd.Series:
+    """
+    Vectorized calculation of Departure Date.
+
+    Rule:
+    - If transaction_date is more than 2 months older than report_extract_date,
+      return first day of (report_extract_date - 2 months)
+    - Else return transaction_date
+    """
+
+    # Ensure datetime (safe even if already datetime)
+    transaction_date = pd.to_datetime(transaction_date, errors='coerce')
+    report_extract_date = pd.to_datetime(report_extract_date, errors='coerce')
+
+    # Month difference
+    month_diff = (
+        (report_extract_date.dt.year - transaction_date.dt.year) * 12
+        + (report_extract_date.dt.month - transaction_date.dt.month)
+    )
+
+    # Default
+    departure_date = transaction_date.copy()
+
+    # Apply rule
+    mask = month_diff > 2
+    capped = report_extract_date - pd.DateOffset(months=2)
+
+    departure_date.loc[mask] = (
+        capped.loc[mask]
+        .dt.to_period('M')
+        .dt.to_timestamp()
+    )
+
+    return departure_date
