@@ -1,4 +1,14 @@
-def apply_type_mapping(df, dtype_mapping):
+def convert_numeric(series):
+    return (
+        series
+        .astype(str)
+        .str.replace(",", "", regex=False)
+        .replace({"": pd.NA, "nan": pd.NA})
+        .pipe(pd.to_numeric, errors="coerce")
+    )
+    
+    
+    def apply_type_mapping(df, dtype_mapping):
     for col, dtype in dtype_mapping.items():
 
         if col not in df.columns:
