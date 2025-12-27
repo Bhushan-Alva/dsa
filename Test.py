@@ -1,60 +1,34 @@
-def calculate_source_name(
-    data: pd.DataFrame,
-    lookups: dict,
-    source_col: str = "Source"
-) -> pd.Series:
-    """
-    Vectorised source-name calculation based on Source column.
-    """
+def apply_type_mapping(df, dtype_mapping):
+    for col, dtype in dtype_mapping.items():
 
-    if source_col not in data.columns:
-        raise ValueError(f"Missing required column: {source_col}")
+        if col not in df.columns:
+            raise KeyError(f"Missing required column: {col}")
 
-    source_name = pd.Series("", index=data.index, dtype="object")
+        dtype = dtype.lower()
 
-    for source, func in SOURCE_FUNCTIONS.items():
+        # ---- Datetime ----
+        if dtype.startswith("datetime"):
+            df[col] = pd.to_datetime(df[col], errors="coerce")
 
-        if source not in SOURCE_VALUE_COLUMNS:
-            continue
+        # ---- Float ----
+        elif dtype in ("float", "float64"):
+            df[col] = convert_numeric(df[col])
 
-        value_cols = SOURCE_VALUE_COLUMNS[source]
+        # ---- Integer (nullable!) ----
+        elif dtype in ("int", "int64"):
+            df[col] = convert_numeric(df[col]).astype("Int64")
 
-        # Validate required columns (only if needed)
-        if value_cols:
-            missing = [c for c in value_cols if c not in data.columns]
-            if missing:
-                raise ValueError(f"Missing columns for {source}: {missing}")
+        # ---- String (NA-safe) ----
+        elif dtype in ("str", "string"):
+            df[col] = df[col].astype("string")
 
-        mask = (
-            data[source_col]
-            .astype(str)
-            .str.strip()
-            .str.lower()
-            == source.lower()
-        )
+        # ---- Boolean (NA-safe) ----
+        elif dtype in ("bool", "boolean"):
+            df[col] = df[col].astype("boolean")
 
-        if not mask.any():
-            continue
+        # ---- Fallback ----
+        else:
+            df[col] = df[col].astype(dtype)
 
-        # ---- CASE 1: No inputs, no lookup ----
-        if not value_cols and source not in SOURCE_LOOKUP_KEYS:
-            source_name.loc[mask] = [func() for _ in range(mask.sum())]
-            continue
-
-        # ---- CASE 2: Inputs only ----
-        values = zip(*(data.loc[mask, c] for c in value_cols))
-
-        if source not in SOURCE_LOOKUP_KEYS:
-            source_name.loc[mask] = [func(*v) for v in values]
-            continue
-
-        # ---- CASE 3: Inputs + lookup ----
-        lookup_key = SOURCE_LOOKUP_KEYS[source]
-        lookup_dict = lookups.get(lookup_key, {})
-
-        source_name.loc[mask] = [
-            func(*v, mapping_lookup=lookup_dict) for v in values
-        ]
-
-    return source_name
+    return df
     
