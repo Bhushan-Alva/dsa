@@ -1,55 +1,60 @@
-"""
-    Build a normalized lookup key by concatenating columns.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Source dataframe
-    cols : list[str]
-        Columns to concatenate
-    sep : str, optional
-        Separator between values (default: "")
-    lower : bool, optional
-        Convert key to lowercase (default: True)
-
-    Returns
-    -------
-    pd.Series
-        Normalized lookup key
+def calculate_source_name(
+    data: pd.DataFrame,
+    lookups: dict,
+    source_col: str = "Source"
+) -> pd.Series:
     """
-
-def calculate_usage(data: pd.DataFrame, source_col="Source") -> pd.Series:
-    """
-    Vectorised usage calculation based on Source column.
+    Vectorised source-name calculation based on Source column.
     """
 
     if source_col not in data.columns:
         raise ValueError(f"Missing required column: {source_col}")
 
-    usage = pd.Series(index=data.index, dtype="float64")
+    source_name = pd.Series("", index=data.index, dtype="object")
 
     for source, func in SOURCE_FUNCTIONS.items():
-        if source not in SOURCE_COLUMN_MAPPING:
+
+        if source not in SOURCE_VALUE_COLUMNS:
             continue
 
-        cols = SOURCE_COLUMN_MAPPING[source]
+        value_cols = SOURCE_VALUE_COLUMNS[source]
 
-        # Validate required columns
-        missing = [c for c in cols if c not in data.columns]
-        if missing:
-            raise ValueError(f"Missing columns for {source}: {missing}")
+        # Validate required columns (only if needed)
+        if value_cols:
+            missing = [c for c in value_cols if c not in data.columns]
+            if missing:
+                raise ValueError(f"Missing columns for {source}: {missing}")
 
-        mask = data[source_col].str.lower() == source
+        mask = (
+            data[source_col]
+            .astype(str)
+            .str.strip()
+            .str.lower()
+            == source.lower()
+        )
 
         if not mask.any():
             continue
 
-        # Extract values column-wise and call pure function row-wise via zip
-        values = zip(*(data.loc[mask, c] for c in cols))
+        # ---- CASE 1: No inputs, no lookup ----
+        if not value_cols and source not in SOURCE_LOOKUP_KEYS:
+            source_name.loc[mask] = [func() for _ in range(mask.sum())]
+            continue
 
-        usage.loc[mask] = [
-            func(*v) for v in values
+        # ---- CASE 2: Inputs only ----
+        values = zip(*(data.loc[mask, c] for c in value_cols))
+
+        if source not in SOURCE_LOOKUP_KEYS:
+            source_name.loc[mask] = [func(*v) for v in values]
+            continue
+
+        # ---- CASE 3: Inputs + lookup ----
+        lookup_key = SOURCE_LOOKUP_KEYS[source]
+        lookup_dict = lookups.get(lookup_key, {})
+
+        source_name.loc[mask] = [
+            func(*v, mapping_lookup=lookup_dict) for v in values
         ]
 
-    return usage
-        
+    return source_name
+    
