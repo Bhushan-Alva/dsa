@@ -1,44 +1,34 @@
-def convert_numeric(series):
-    return (
-        series
-        .astype(str)
-        .str.replace(",", "", regex=False)
-        .replace({"": pd.NA, "nan": pd.NA})
-        .pipe(pd.to_numeric, errors="coerce")
-    )
-    
-    
-    def apply_type_mapping(df, dtype_mapping):
-    for col, dtype in dtype_mapping.items():
+def get_travel_category(country_of_transaction, legal_entity, entity_country_lookup):
+    """
+    Pure Python travel category logic.
 
-        if col not in df.columns:
-            raise KeyError(f"Missing required column: {col}")
+    Rules:
+    - If country_of_transaction is blank / None / missing → "Unknown"
+    - Else if legal entity country matches transaction country → "Local"
+    - Else → "Abroad"
+    """
 
-        dtype = dtype.lower()
+    # ---- First check: missing / blank country ----
+    if country_of_transaction is None:
+        return "Unknown"
 
-        # ---- Datetime ----
-        if dtype.startswith("datetime"):
-            df[col] = pd.to_datetime(df[col], errors="coerce")
+    country = str(country_of_transaction).strip()
+    if not country:
+        return "Unknown"
 
-        # ---- Float ----
-        elif dtype in ("float", "float64"):
-            df[col] = convert_numeric(df[col])
+    # ---- Lookup legal entity country ----
+    if legal_entity is None:
+        return "Abroad"   # business choice: no entity match
 
-        # ---- Integer (nullable!) ----
-        elif dtype in ("int", "int64"):
-            df[col] = convert_numeric(df[col]).astype("Int64")
+    entity_key = str(legal_entity).strip().lower()
+    entity_country = entity_country_lookup.get(entity_key)
 
-        # ---- String (NA-safe) ----
-        elif dtype in ("str", "string"):
-            df[col] = df[col].astype("string")
+    if not entity_country:
+        return "Abroad"
 
-        # ---- Boolean (NA-safe) ----
-        elif dtype in ("bool", "boolean"):
-            df[col] = df[col].astype("boolean")
+    # ---- Final comparison ----
+    if entity_country.strip().lower() == country.lower():
+        return "Local"
 
-        # ---- Fallback ----
-        else:
-            df[col] = df[col].astype(dtype)
-
-    return df
+    return "Abroad"
     
