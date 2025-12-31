@@ -15,3 +15,9 @@ def lpt_usage(emp_country, country_of_transaction, cost, **lookups):
 
     return cost / rate if rate else 0.0
     
+def _safe_rate(lookup: dict, key: str) -> float:
+    try:
+        return float(lookup.get(key, 0))
+    except (TypeError, ValueError):
+        return 0.0
+        
