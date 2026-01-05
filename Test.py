@@ -1,23 +1,49 @@
-def lpt_usage(emp_country, country_of_transaction, cost, **lookups):
+def is_blank(x):
+    if x is None:
+        return True
+    if isinstance(x, float):  # NaN
+        return True
+    if isinstance(x, str) and x.strip() == "":
+        return True
+    return False
+
+
+def calculate_usage(emp_country, country_of_transaction, cost, lookups):
+
     if not cost:
         return 0.0
 
-    if country_of_transaction:
-        rate_lookup = lookups.get("lpt_country_mapping", {})
-        rate_key = rate_lookup.get(country_of_transaction.lower(), "")
-        rate = _safe_rate(lookups.get("transaction_country_rail_rate", {}), rate_key)
+    # ===== Excel: IF(BK2="") =====
+    if is_blank(country_of_transaction):
+
+        # Excel: IF(P2="FR")
+        if emp_country == "FR":
+            rate = safe_rate(
+                lookups["country_bus_rate"],
+                emp_country
+            )
+        else:
+            rate = safe_rate(
+                lookups["country_bus_rate_non_fr"],
+                emp_country
+            )
 
     else:
+        mapped_country = lookups["ipt_country_mapping"].get(
+            safe_lower(country_of_transaction),
+            ""
+        )
+
         if emp_country == "FR":
-            rate = _safe_rate(lookups.get("emp_country_rail_rate", {}), emp_country.lower())
+            rate = safe_rate(
+                lookups["emp_country_call_rate"],
+                mapped_country
+            )
         else:
-            rate = _safe_rate(lookups.get("emp_country_bus_rate", {}), emp_country.lower())
+            rate = safe_rate(
+                lookups["emp_country_bus_rate"],
+                mapped_country
+            )
 
     return cost / rate if rate else 0.0
     
-def _safe_rate(lookup: dict, key: str) -> float:
-    try:
-        return float(lookup.get(key, 0))
-    except (TypeError, ValueError):
-        return 0.0
-        
