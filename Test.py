@@ -1,31 +1,29 @@
-def rental_car_usage(
-    expense_type: str,
-    expense_key: str,
-    emp_country: str,
-    cot: str,
-    approved_amount: float,
-    *,
-    rental_country_split_mapping: dict,
-    rental_fuel_price_mapping: dict,
-    oc_mapping: float
-) -> float:
-    if emp_country == "GB":
-        return 0.0
+def add_rental_report_flags(df: pd.DataFrame) -> pd.DataFrame:
+    exp_type_norm = (
+        df["Expense Type"]
+        .astype(str)
+        .str.strip()
+        .str.casefold()
+    )
 
-    expense_type_norm = expense_type.strip().casefold()
+    total = df.groupby("Expense Report Key")["Expense Report Key"].transform("count")
 
-    if "car rental" in expense_type_norm:
-        split = rental_country_split_mapping.get(emp_country, oc_mapping)
-        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
-        return (approved_amount * split) / fuel_price
+    car_rental = (
+        df.loc[exp_type_norm.eq("car rental")]
+        .groupby("Expense Report Key")["Expense Report Key"]
+        .transform("count")
+        .reindex(df.index, fill_value=0)
+    )
 
-    if "fuel" in expense_type_norm:
-        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
-        return approved_amount / fuel_price
+    fuel = (
+        df.loc[exp_type_norm.str.contains("fuel", na=False)]
+        .groupby("Expense Report Key")["Expense Report Key"]
+        .transform("count")
+        .reindex(df.index, fill_value=0)
+    )
 
-    if "rental" in expense_type_norm and "fuel" not in expense_type_norm:
-        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
-        return approved_amount / fuel_price
+    df["_all_car_rental"] = total.eq(car_rental)
+    df["_all_fuel"] = total.eq(fuel)
 
-    return approved_amount / rental_fuel_price_mapping.get(cot, oc_mapping)
+    return df
     
