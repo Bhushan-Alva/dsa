@@ -1,49 +1,31 @@
-def is_blank(x):
-    if x is None:
-        return True
-    if isinstance(x, float):  # NaN
-        return True
-    if isinstance(x, str) and x.strip() == "":
-        return True
-    return False
-
-
-def calculate_usage(emp_country, country_of_transaction, cost, lookups):
-
-    if not cost:
+def rental_car_usage(
+    expense_type: str,
+    expense_key: str,
+    emp_country: str,
+    cot: str,
+    approved_amount: float,
+    *,
+    rental_country_split_mapping: dict,
+    rental_fuel_price_mapping: dict,
+    oc_mapping: float
+) -> float:
+    if emp_country == "GB":
         return 0.0
 
-    # ===== Excel: IF(BK2="") =====
-    if is_blank(country_of_transaction):
+    expense_type_norm = expense_type.strip().casefold()
 
-        # Excel: IF(P2="FR")
-        if emp_country == "FR":
-            rate = safe_rate(
-                lookups["country_bus_rate"],
-                emp_country
-            )
-        else:
-            rate = safe_rate(
-                lookups["country_bus_rate_non_fr"],
-                emp_country
-            )
+    if "car rental" in expense_type_norm:
+        split = rental_country_split_mapping.get(emp_country, oc_mapping)
+        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
+        return (approved_amount * split) / fuel_price
 
-    else:
-        mapped_country = lookups["ipt_country_mapping"].get(
-            safe_lower(country_of_transaction),
-            ""
-        )
+    if "fuel" in expense_type_norm:
+        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
+        return approved_amount / fuel_price
 
-        if emp_country == "FR":
-            rate = safe_rate(
-                lookups["emp_country_call_rate"],
-                mapped_country
-            )
-        else:
-            rate = safe_rate(
-                lookups["emp_country_bus_rate"],
-                mapped_country
-            )
+    if "rental" in expense_type_norm and "fuel" not in expense_type_norm:
+        fuel_price = rental_fuel_price_mapping.get(cot, oc_mapping)
+        return approved_amount / fuel_price
 
-    return cost / rate if rate else 0.0
+    return approved_amount / rental_fuel_price_mapping.get(cot, oc_mapping)
     
