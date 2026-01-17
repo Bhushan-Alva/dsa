@@ -1,9 +1,9 @@
 import os
 import pandas as pd
 
-# ==============================
-# CONFIG
-# ==============================
+# ==================================
+# CONFIG — OUTPUT SCHEMA
+# ==================================
 
 output_columns = {
     "Common Columns": [
@@ -26,13 +26,12 @@ output_columns = {
     "Rail": ["Text1", "Text3", "Country of Transaction", "Emissions"],
 }
 
-
-# ==============================
-# CORE FUNCTIONS
-# ==============================
+# ==================================
+# HELPERS
+# ==================================
 
 def get_sources(df, source_col="Source Name"):
-    """Return unique source names from dataset"""
+    """Return unique source names in the dataset"""
     return (
         df[source_col]
         .dropna()
@@ -41,10 +40,39 @@ def get_sources(df, source_col="Source Name"):
     )
 
 
+def build_filename(df, source, date_col="Accounting Date", source_col="Source Name"):
+    """
+    Format:
+    2025 01-12 Consolidated Taxi.xlsx
+    """
+
+    src_df = df[df[source_col] == source]
+
+    dates = pd.to_datetime(src_df[date_col], errors="coerce")
+
+    if dates.notna().any():
+        max_date = dates.max()
+        year = max_date.year
+        month = f"{max_date.month:02d}"
+    else:
+        year = "UNKNOWN"
+        month = "00"
+
+    safe_source = (
+        source
+        .replace("/", "_")
+        .replace("\\", "_")
+    )
+
+    return f"{year} 01-{month} Consolidated {safe_source}.xlsx"
+
+
+# ==================================
+# CORE LOGIC
+# ==================================
+
 def build_output_for_source(df, source, output_map, source_col="Source Name"):
     """
-    Builds aggregated output dataframe for ONE source
-
     Rules:
     - Group by Console Key
     - Usage & Cost = SUM
@@ -54,7 +82,7 @@ def build_output_for_source(df, source, output_map, source_col="Source Name"):
 
     df = df.copy()
 
-    # Final schema for this source
+    # Final schema
     final_cols = output_map["Common Columns"] + output_map.get(source, [])
 
     # Ensure all columns exist
@@ -62,10 +90,10 @@ def build_output_for_source(df, source, output_map, source_col="Source Name"):
         if col not in df.columns:
             df[col] = ""
 
-    # Filter source rows
+    # Filter only this source
     df = df[df[source_col] == source]
 
-    # Return empty file with schema if no data
+    # Return empty schema if no data
     if df.empty:
         return pd.DataFrame(columns=final_cols)
 
@@ -112,35 +140,26 @@ def export_sources_to_excel(df, output_map, output_dir, source_col="Source Name"
             source_col=source_col
         )
 
-        # Safe file name
-        safe_name = (
-            source
-            .replace(" ", "_")
-            .replace("/", "_")
-            .replace("\\", "_")
-        )
+        filename = build_filename(df, source, source_col=source_col)
 
-        file_path = os.path.join(
-            output_dir,
-            f"{safe_name}_output.xlsx"
-        )
+        file_path = os.path.join(output_dir, filename)
 
         out_df.to_excel(file_path, index=False)
         print(f"Saved: {file_path}")
 
 
-# ==============================
+# ==================================
 # RUN PIPELINE
-# ==============================
+# ==================================
 
 if __name__ == "__main__":
-    # Example: Load your raw data
+    # Load your raw data
     raw_df = pd.read_excel("raw_expense_data.xlsx")
 
-    # Export one Excel per source
+    # Export per source
     export_sources_to_excel(
         df=raw_df,
         output_map=output_columns,
         output_dir="expense_outputs"
-    )
+                           )
     
