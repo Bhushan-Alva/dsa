@@ -1,27 +1,36 @@
 import pandas as pd
 
-def build_console_key(row, source, key_map, sep="|"):
-    """
-    Build a composite console key based on source-specific columns
+def build_console_key_vectorized(df, source_col, key_map, sep="|"):
+    df = df.copy()
+    df["console_key"] = ""
 
-    row: Pandas Series (df row)
-    source: string (e.g. "Taxi", "Hotel")
-    key_map: your keys dictionary
-    sep: separator for key parts
-    """
+    # Collect all possible key columns
+    all_cols = set(col for cols in key_map.values() for col in cols)
 
-    columns = key_map.get(source, [])
+    # Normalize once
+    for col in all_cols:
+        if col not in df.columns:
+            df[col] = ""
 
-    values = []
-    for col in columns:
-        val = row.get(col, "")
-        
-        if pd.isna(val):
-            val = ""
-        else:
-            val = str(val).strip()
+        df[col] = (
+            df[col]
+            .fillna("")
+            .astype(str)
+            .str.strip()
+        )
 
-        values.append(val)
+    # Build per source
+    for source, cols in key_map.items():
+        if not cols:
+            continue
 
-    return sep.join(values)
-    
+        mask = df[source_col].eq(source)
+        if not mask.any():
+            continue
+
+        df.loc[mask, "console_key"] = (
+            df.loc[mask, cols]
+              .agg(sep.join, axis=1)
+        )
+
+    return df
