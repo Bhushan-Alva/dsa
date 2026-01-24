@@ -1,149 +1,5 @@
-import numpy as np
-import pandas as pd
-from openpyxl import load_workbook
-from openpyxl.styles import PatternFill
-from openpyxl.formatting.rule import Rule
-from openpyxl.styles.differential import DifferentialStyle
-
-
-def compare_and_export_amount_diff(
-    current_df,
-    previous_df,
-    key_col="Project Number",
-    value_col="Approved Amount",
-    diff_col="Amount_Diff",
-    output_file="project_amount_diff_check.xlsx",
-    sheet_name="Data",
-    negative_color="F8D7DA",
-    number_format="0.00%",
-    max_col_width=40
-):
-    """
-    Compare two datasets by aggregating a value column and exporting % difference to Excel
-
-    Workflow:
-    - Group + sum both datasets
-    - Outer merge
-    - Fill missing values
-    - Calculate % diff
-    - Sort
-    - Export to Excel
-    - Format + highlight negative diffs
-    """
-
-    # ------------------ 1) Aggregate ------------------
-    cur_grp = (
-        current_df
-        .groupby(key_col, as_index=False)
-        .agg({value_col: "sum"})
-        .rename(columns={value_col: f"{value_col}_new"})
-    )
-
-    prev_grp = (
-        previous_df
-        .groupby(key_col, as_index=False)
-        .agg({value_col: "sum"})
-        .rename(columns={value_col: f"{value_col}_old"})
-    )
-
-    # ------------------ 2) Merge ------------------
-    result = cur_grp.merge(
-        prev_grp,
-        on=key_col,
-        how="outer"
-    )
-
-    # ------------------ 3) Clean ------------------
-    result[[f"{value_col}_new", f"{value_col}_old"]] = (
-        result[[f"{value_col}_new", f"{value_col}_old"]].fillna(0)
-    )
-
-    # ------------------ 4) Diff Calculation ------------------
-    result[diff_col] = np.where(
-        result[f"{value_col}_old"] == 0,
-        1,  # 100% when previous is zero
-        result[f"{value_col}_new"].div(result[f"{value_col}_old"]) - 1
-    )
-
-    # ------------------ 5) Sort ------------------
-    result = result.sort_values(diff_col)
-
-    # ------------------ 6) Export ------------------
-    with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        result.to_excel(writer, index=False, sheet_name=sheet_name)
-
-    # ------------------ 7) Excel Formatting ------------------
-    wb = load_workbook(output_file)
-    ws = wb[sheet_name]
-
-    # Find diff column dynamically
-    headers = [cell.value for cell in ws[1]]
-    if diff_col not in headers:
-        raise ValueError(f"Column '{diff_col}' not found in Excel sheet")
-
-    col_idx = headers.index(diff_col) + 1
-    col_letter = ws.cell(row=1, column=col_idx).column_letter
-
-    max_row = ws.max_row
-    diff_range = f"{col_letter}2:{col_letter}{max_row}"
-
-    # Number format
-    for row in range(2, max_row + 1):
-        ws[f"{col_letter}{row}"].number_format = number_format
-
-    # Conditional formatting (negative values)
-    fill = PatternFill(
-        start_color=negative_color,
-        end_color=negative_color,
-        fill_type="solid"
-    )
-    dxf = DifferentialStyle(fill=fill)
-
-    rule = Rule(
-        type="expression",
-        dxf=dxf,
-        formula=[f"{col_letter}2<0"]
-    )
-
-    ws.conditional_formatting.add(diff_range, rule)
-
-    # Freeze header
-    ws.freeze_panes = "A2"
-
-    # Auto-size columns
-    for col in ws.columns:
-        max_length = 0
-        col_letter = col[0].column_letter
-
-        for cell in col:
-            try:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            except:
-                pass
-
-        ws.column_dimensions[col_letter].width = min(max_length + 2, max_col_width)
-
-    # Save
-    wb.save(output_file)
-
-    print(f"Saved: {output_file}")
-
-    return result
-        
-result = compare_and_export_amount_diff(
-    current_df=data,
-    previous_df=prev_data,
-    key_col="Project Number",
-    value_col="Approved Amount",
-    output_file="project_amount_diff_check.xlsx"
-)
-
-
-
-
 # ================================
-# FULL REUSABLE REPORTING ENGINE
+# SOURCE-AWARE REPORTING ENGINE
 # ================================
 
 import numpy as np
@@ -355,59 +211,94 @@ def send_outlook_email(
     else:
         mail.Send()
 
-    print("Email sent via Outlook!")
+    print(f"Email sent: {subject}")
 
 
 # -------------------------------------------------
-# 4) ONE-LINE PIPELINE RUNNER
+# 4) SOURCE-AWARE PIPELINE RUNNER
 # -------------------------------------------------
-def run_country_month_report(
+def run_country_month_report_by_source(
     latest_raw,
     old_raw,
-    to_emails,
-    subject,
-    custom_message,
-    excel_path=None,
+    source_col="Source",
+    to_emails=None,
+    subject_prefix="MyExpense Company Car",
+    custom_message="",
+    excel_path_template=None,
     cc_emails=None,
     preview=True
 ):
-    matrix, latest_month = build_pct_diff_matrix(
-        latest_raw=latest_raw,
-        old_raw=old_raw
+    """
+    Generates and emails one matrix PER SOURCE
+
+    Returns:
+        dict[source] = matrix_view
+    """
+
+    if to_emails is None:
+        raise ValueError("to_emails must be provided")
+
+    results = {}
+
+    sources = (
+        pd.concat([latest_raw[source_col], old_raw[source_col]])
+        .dropna()
+        .unique()
     )
 
-    html_table = render_html_matrix(matrix, latest_month)
+    for src in sources:
+        latest_src = latest_raw[latest_raw[source_col] == src]
+        old_src = old_raw[old_raw[source_col] == src]
 
-    send_outlook_email(
-        to_emails=to_emails,
-        cc_emails=cc_emails,
-        subject=subject,
-        message=custom_message,
-        html_table=html_table,
-        excel_path=excel_path,
-        preview=preview
-    )
+        if latest_src.empty and old_src.empty:
+            continue
 
-    return matrix
+        matrix, latest_month = build_pct_diff_matrix(
+            latest_src,
+            old_src
+        )
+
+        html_table = render_html_matrix(matrix, latest_month)
+
+        subject = f"{subject_prefix} - {src} - Country x Month % Difference"
+
+        excel_path = None
+        if excel_path_template:
+            excel_path = excel_path_template.format(source=str(src).replace(" ", "_"))
+
+        send_outlook_email(
+            to_emails=to_emails,
+            cc_emails=cc_emails,
+            subject=subject,
+            message=custom_message,
+            html_table=html_table,
+            excel_path=excel_path,
+            preview=preview
+        )
+
+        results[src] = matrix
+
+    return results
 
 
 # -------------------------------------------------
 # 5) EXAMPLE USAGE
 # -------------------------------------------------
-# matrix = run_country_month_report(
+# matrices = run_country_month_report_by_source(
 #     latest_raw=latest_raw_df,
 #     old_raw=old_raw_df,
+#     source_col="Source",
 #     to_emails=["bhushan.alva@capgemini.com"],
 #     cc_emails=["cat_myexpense.in@capgemini.com"],
-#     subject="MyExpense Company Car - Country x Month % Difference",
+#     subject_prefix="MyExpense Company Car",
 #     custom_message="""
 # Hello All,
 #
-# This is the automated MyExpense report for latest vs previous month.
-# Please find the % difference matrix below.
+# This is the automated Country x Month % Difference report.
+# Each source is sent in a separate email for clarity.
 #
 # Thanks,
 # """,
-#     excel_path="Difference.xlsx",
-#     preview=True   # Set False to auto-send
+#     excel_path_template="Difference_{source}.xlsx",
+#     preview=True   # False = auto-send
 # )
