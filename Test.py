@@ -131,3 +131,10 @@ def compare_and_export_amount_diff(
 
     return result
         
+result = compare_and_export_amount_diff(
+    current_df=data,
+    previous_df=prev_data,
+    key_col="Project Number",
+    value_col="Approved Amount",
+    output_file="project_amount_diff_check.xlsx"
+)
