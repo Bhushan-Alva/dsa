@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
@@ -5,63 +6,111 @@ from openpyxl.formatting.rule import Rule
 from openpyxl.styles.differential import DifferentialStyle
 
 
-def duplicate_check_export(
-    df,
-    columns,
-    output_file,
+def compare_and_export_amount_diff(
+    current_df,
+    previous_df,
+    key_col="Project Number",
+    value_col="Approved Amount",
+    diff_col="Amount_Diff",
+    output_file="project_amount_diff_check.xlsx",
     sheet_name="Data",
-    highlight_color="FFF3CD",
+    negative_color="F8D7DA",
+    number_format="0.00%",
     max_col_width=40
 ):
     """
-    Reusable duplicate checker and Excel exporter
+    Compare two datasets by aggregating a value column and exporting % difference to Excel
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Source dataframe
-    columns : list
-        Columns to include in output
-        First column is used for duplicate highlighting
-    output_file : str
-        Excel file name to save
-    sheet_name : str
-        Excel sheet name
-    highlight_color : str
-        Hex fill color for duplicates
-    max_col_width : int
-        Maximum Excel column width
+    Workflow:
+    - Group + sum both datasets
+    - Outer merge
+    - Fill missing values
+    - Calculate % diff
+    - Sort
+    - Export to Excel
+    - Format + highlight negative diffs
     """
 
-    # ------------------ 1) Filter + Deduplicate ------------------
-    df_out = df[columns].drop_duplicates()
+    # ------------------ 1) Aggregate ------------------
+    cur_grp = (
+        current_df
+        .groupby(key_col, as_index=False)
+        .agg({value_col: "sum"})
+        .rename(columns={value_col: f"{value_col}_new"})
+    )
 
-    # ------------------ 2) Export to Excel ------------------
+    prev_grp = (
+        previous_df
+        .groupby(key_col, as_index=False)
+        .agg({value_col: "sum"})
+        .rename(columns={value_col: f"{value_col}_old"})
+    )
+
+    # ------------------ 2) Merge ------------------
+    result = cur_grp.merge(
+        prev_grp,
+        on=key_col,
+        how="outer"
+    )
+
+    # ------------------ 3) Clean ------------------
+    result[[f"{value_col}_new", f"{value_col}_old"]] = (
+        result[[f"{value_col}_new", f"{value_col}_old"]].fillna(0)
+    )
+
+    # ------------------ 4) Diff Calculation ------------------
+    result[diff_col] = np.where(
+        result[f"{value_col}_old"] == 0,
+        1,  # 100% when previous is zero
+        result[f"{value_col}_new"].div(result[f"{value_col}_old"]) - 1
+    )
+
+    # ------------------ 5) Sort ------------------
+    result = result.sort_values(diff_col)
+
+    # ------------------ 6) Export ------------------
     with pd.ExcelWriter(output_file, engine="openpyxl") as writer:
-        df_out.to_excel(writer, index=False, sheet_name=sheet_name)
+        result.to_excel(writer, index=False, sheet_name=sheet_name)
 
-    # ------------------ 3) Open with openpyxl ------------------
+    # ------------------ 7) Excel Formatting ------------------
     wb = load_workbook(output_file)
     ws = wb[sheet_name]
 
-    # ------------------ 4) Highlight Duplicates in Column A ------------------
-    max_row = ws.max_row
-    cell_range = f"A2:A{max_row}"
+    # Find diff column dynamically
+    headers = [cell.value for cell in ws[1]]
+    if diff_col not in headers:
+        raise ValueError(f"Column '{diff_col}' not found in Excel sheet")
 
+    col_idx = headers.index(diff_col) + 1
+    col_letter = ws.cell(row=1, column=col_idx).column_letter
+
+    max_row = ws.max_row
+    diff_range = f"{col_letter}2:{col_letter}{max_row}"
+
+    # Number format
+    for row in range(2, max_row + 1):
+        ws[f"{col_letter}{row}"].number_format = number_format
+
+    # Conditional formatting (negative values)
     fill = PatternFill(
-        start_color=highlight_color,
-        end_color=highlight_color,
+        start_color=negative_color,
+        end_color=negative_color,
         fill_type="solid"
     )
     dxf = DifferentialStyle(fill=fill)
 
-    rule = Rule(type="duplicateValues", dxf=dxf)
-    ws.conditional_formatting.add(cell_range, rule)
+    rule = Rule(
+        type="expression",
+        dxf=dxf,
+        formula=[f"{col_letter}2<0"]
+    )
 
-    # ------------------ 5) Freeze Header ------------------
+    ws.conditional_formatting.add(diff_range, rule)
+
+    # Freeze header
     ws.freeze_panes = "A2"
 
-    # ------------------ 6) Auto-size Columns ------------------
+    # Auto-size columns
     for col in ws.columns:
         max_length = 0
         col_letter = col[0].column_letter
@@ -75,16 +124,10 @@ def duplicate_check_export(
 
         ws.column_dimensions[col_letter].width = min(max_length + 2, max_col_width)
 
-    # ------------------ 7) Save ------------------
+    # Save
     wb.save(output_file)
 
-    # ------------------ 8) Console Status ------------------
-    first_col = columns[0]
-    if df_out.shape[0] == len(df_out[first_col].drop_duplicates()):
-        print(f"Saved: {output_file}")
-        print("No Duplicate records found")
-    else:
-        print(f"Saved: {output_file}")
-        print("Duplicate records found")
+    print(f"Saved: {output_file}")
 
-    return df_out
+    return result
+        
