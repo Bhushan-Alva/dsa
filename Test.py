@@ -368,3 +368,63 @@ def build_expense_level_diff_file(
 
     return diff_df.sort_values("Pct_Change", ascending=False)
     
+def build_expense_level_diff_file(
+    latest_raw: pd.DataFrame,
+    old_raw: pd.DataFrame,
+    expense_id_col="Expense ID",
+    country_col="Employee Country",
+    date_col="Report Extract Date",
+    value_col="Approved Amount"
+):
+    """
+    Builds row-level diff file using GROUP BY:
+    Expense ID | Country | Report Date (DATE ONLY) | Old Value | New Value | Change
+    """
+
+    def normalize(df):
+        temp = df.copy()
+
+        # Ensure datetime and extract DATE only (drop time)
+        temp[date_col] = pd.to_datetime(temp[date_col]).dt.date
+
+        # Group + sum to make rows unique
+        grouped = (
+            temp
+            .groupby([expense_id_col, country_col, date_col], as_index=False)[value_col]
+            .sum()
+        )
+
+        return grouped
+
+    # Normalize both sides
+    latest_norm = normalize(latest_raw)
+    old_norm = normalize(old_raw)
+
+    # Rename for clarity
+    latest_norm = latest_norm.rename(columns={value_col: "New_Value"})
+    old_norm = old_norm.rename(columns={value_col: "Old_Value"})
+
+    merge_keys = [expense_id_col, country_col, date_col]
+
+    # Safe merge (1:1 after groupby)
+    diff_df = pd.merge(
+        latest_norm,
+        old_norm,
+        on=merge_keys,
+        how="outer",
+        validate="one_to_one"
+    )
+
+    # Fill missing values
+    diff_df[["Old_Value", "New_Value"]] = (
+        diff_df[["Old_Value", "New_Value"]].fillna(0.0)
+    )
+
+    # Numeric difference
+    diff_df["Change"] = diff_df["New_Value"] - diff_df["Old_Value"]
+
+    # Sort biggest changes first
+    diff_df = diff_df.sort_values("Change", ascending=False)
+
+    return diff_df
+    
