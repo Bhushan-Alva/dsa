@@ -1,7 +1,9 @@
 # ================================
 # SOURCE-AWARE REPORTING ENGINE
+# (CREATES + ATTACHES EXCEL)
 # ================================
 
+import os
 import numpy as np
 import pandas as pd
 import win32com.client as win32
@@ -17,13 +19,6 @@ def build_pct_diff_matrix(
     date_col="Report Extract Date",
     value_col="Approved Amount"
 ):
-    """
-    Builds Country x Month % Difference Matrix
-    Returns:
-        matrix_view (DataFrame)
-        latest_month_name (str)
-    """
-
     month_order = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
     latest = latest_raw.copy()
@@ -84,19 +79,21 @@ def build_pct_diff_matrix(
 
 
 # -------------------------------------------------
-# 2) RENDER OUTLOOK-SAFE HTML TABLE
+# 2) SAVE MATRIX TO EXCEL
+# -------------------------------------------------
+def save_matrix_to_excel(matrix_df, excel_path, sheet_name="Difference"):
+    os.makedirs(os.path.dirname(excel_path), exist_ok=True)
+
+    with pd.ExcelWriter(excel_path, engine="openpyxl") as writer:
+        matrix_df.to_excel(writer, sheet_name=sheet_name)
+
+    return excel_path
+
+
+# -------------------------------------------------
+# 3) RENDER OUTLOOK-SAFE HTML TABLE
 # -------------------------------------------------
 def render_html_matrix(df: pd.DataFrame, latest_month_name: str) -> str:
-    """
-    Renders an HTML table with color rules:
-    Latest month:
-        0.00 -> RED
-        non-zero -> BLUE
-    Other months:
-        0.00 -> GREEN
-        non-zero -> RED
-    """
-
     RED = "#FFD5D5"
     BLUE = "#CFE8FF"
     GREEN = "#C6EFCE"
@@ -152,7 +149,7 @@ def render_html_matrix(df: pd.DataFrame, latest_month_name: str) -> str:
 
 
 # -------------------------------------------------
-# 3) SEND EMAIL VIA OUTLOOK
+# 4) SEND EMAIL VIA OUTLOOK
 # -------------------------------------------------
 def send_outlook_email(
     to_emails,
@@ -164,31 +161,6 @@ def send_outlook_email(
     bcc_emails=None,
     preview=False
 ):
-    """
-    Sends an HTML email via Outlook with optional attachment
-    """
-
-    legend_html = """
-    <div style="margin-bottom:8px;">
-        <span style="display:inline-block;width:14px;height:14px;background:#FFD5D5;border:1px solid #bbb;"></span>
-        <span style="margin-right:18px;">RED: non-zero (other months) or zero (latest month)</span>
-        <span style="display:inline-block;width:14px;height:14px;background:#CFE8FF;border:1px solid #bbb;"></span>
-        <span style="margin-right:18px;">BLUE: non-zero in latest month</span>
-        <span style="display:inline-block;width:14px;height:14px;background:#C6EFCE;border:1px solid #bbb;"></span>
-        <span>GREEN: zero in other months</span>
-    </div>
-    """
-
-    html_body = f"""
-    <html>
-    <body style="font-family: Segoe UI, Roboto, Arial; font-size: 14px;">
-        <pre style="white-space: pre-wrap; margin: 0 0 12px 0;">{message.strip()}</pre>
-        {legend_html}
-        {html_table}
-    </body>
-    </html>
-    """
-
     outlook = win32.Dispatch("Outlook.Application")
     mail = outlook.CreateItem(0)
 
@@ -201,9 +173,19 @@ def send_outlook_email(
         mail.BCC = "; ".join(bcc_emails)
 
     mail.Subject = subject
+
+    html_body = f"""
+    <html>
+    <body style="font-family: Segoe UI, Roboto, Arial; font-size: 14px;">
+        <pre style="white-space: pre-wrap; margin: 0 0 12px 0;">{message.strip()}</pre>
+        {html_table}
+    </body>
+    </html>
+    """
+
     mail.HTMLBody = html_body
 
-    if excel_path:
+    if excel_path and os.path.exists(excel_path):
         mail.Attachments.Add(Source=excel_path)
 
     if preview:
@@ -215,21 +197,23 @@ def send_outlook_email(
 
 
 # -------------------------------------------------
-# 4) SOURCE-AWARE PIPELINE RUNNER
+# 5) SOURCE-AWARE PIPELINE RUNNER
 # -------------------------------------------------
 def run_country_month_report_by_source(
     latest_raw,
     old_raw,
     source_col="Source",
+    output_dir="reports",
     to_emails=None,
     subject_prefix="MyExpense Company Car",
     custom_message="",
-    excel_path_template=None,
     cc_emails=None,
     preview=True
 ):
     """
-    Generates and emails one matrix PER SOURCE
+    Generates:
+    - One Excel file per Source
+    - One Email per Source (with Excel attached)
 
     Returns:
         dict[source] = matrix_view
@@ -258,13 +242,16 @@ def run_country_month_report_by_source(
             old_src
         )
 
+        # Create Excel file
+        safe_src = str(src).replace(" ", "_").replace("/", "_")
+        excel_path = os.path.join(output_dir, f"Difference_{safe_src}.xlsx")
+        save_matrix_to_excel(matrix, excel_path)
+
+        # Create HTML table
         html_table = render_html_matrix(matrix, latest_month)
 
+        # Send mail
         subject = f"{subject_prefix} - {src} - Country x Month % Difference"
-
-        excel_path = None
-        if excel_path_template:
-            excel_path = excel_path_template.format(source=str(src).replace(" ", "_"))
 
         send_outlook_email(
             to_emails=to_emails,
@@ -282,12 +269,13 @@ def run_country_month_report_by_source(
 
 
 # -------------------------------------------------
-# 5) EXAMPLE USAGE
+# 6) EXAMPLE USAGE
 # -------------------------------------------------
 # matrices = run_country_month_report_by_source(
 #     latest_raw=latest_raw_df,
 #     old_raw=old_raw_df,
 #     source_col="Source",
+#     output_dir="C:/Users/BHALVA/Reports",
 #     to_emails=["bhushan.alva@capgemini.com"],
 #     cc_emails=["cat_myexpense.in@capgemini.com"],
 #     subject_prefix="MyExpense Company Car",
@@ -295,10 +283,9 @@ def run_country_month_report_by_source(
 # Hello All,
 #
 # This is the automated Country x Month % Difference report.
-# Each source is sent in a separate email for clarity.
+# Please find the Excel attached for detailed analysis.
 #
 # Thanks,
 # """,
-#     excel_path_template="Difference_{source}.xlsx",
 #     preview=True   # False = auto-send
 # )
