@@ -289,3 +289,82 @@ def run_country_month_report_by_source(
 # """,
 #     preview=True   # False = auto-send
 # )
+
+
+
+def build_expense_level_diff_file(
+    latest_raw: pd.DataFrame,
+    old_raw: pd.DataFrame,
+    expense_id_col="Expense ID",
+    country_col="Employee Country",
+    date_col="Report Extract Date",
+    value_col="Approved Amount"
+):
+    """
+    Builds row-level diff file:
+    Expense ID | Country | Report Date | Old Value | New Value | Change | % Change
+    """
+
+    latest = latest_raw.copy()
+    old = old_raw.copy()
+
+    # Keep only needed columns
+    latest = latest[[expense_id_col, country_col, date_col, value_col]]
+    old = old[[expense_id_col, country_col, date_col, value_col]]
+
+    # Rename for merge
+    latest = latest.rename(columns={value_col: "New_Value"})
+    old = old.rename(columns={value_col: "Old_Value"})
+
+    # Merge on Expense ID
+    diff_df = pd.merge(
+        latest,
+        old,
+        on=expense_id_col,
+        how="outer",
+        suffixes=("_latest", "_old")
+    )
+
+    # Prefer latest metadata
+    diff_df[country_col] = diff_df[f"{country_col}_latest"].combine_first(
+        diff_df[f"{country_col}_old"]
+    )
+
+    diff_df[date_col] = diff_df[f"{date_col}_latest"].combine_first(
+        diff_df[f"{date_col}_old"]
+    )
+
+    # Clean up
+    diff_df = diff_df.drop(
+        columns=[f"{country_col}_latest", f"{country_col}_old",
+                 f"{date_col}_latest", f"{date_col}_old"]
+    )
+
+    diff_df[["Old_Value", "New_Value"]] = (
+        diff_df[["Old_Value", "New_Value"]].fillna(0.0)
+    )
+
+    # Calculate changes
+    diff_df["Change"] = diff_df["New_Value"] - diff_df["Old_Value"]
+
+    diff_df["Pct_Change"] = np.where(
+        diff_df["Old_Value"] == 0,
+        np.where(diff_df["New_Value"] == 0, 0.0, 100.0),
+        ((diff_df["New_Value"] - diff_df["Old_Value"]) / diff_df["Old_Value"]) * 100.0
+    ).round(2)
+
+    # Final column order
+    diff_df = diff_df[
+        [
+            expense_id_col,
+            country_col,
+            date_col,
+            "Old_Value",
+            "New_Value",
+            "Change",
+            "Pct_Change",
+        ]
+    ]
+
+    return diff_df.sort_values("Pct_Change", ascending=False)
+    
