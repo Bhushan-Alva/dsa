@@ -1,0 +1,409 @@
+Country,City,Taxi_Start,Taxi_1km
+"Aachen, Germany",,4.90,2.30
+"Aarhus, Denmark",,5.22,1.53
+"Abidjan, Ivory Coast",,1.52,1.52
+"Abu Dhabi, United Arab Emirates",,2.75,0.46
+"Accra, Ghana",,,0.99
+"Ad Dammam, Saudi Arabia",,2.25,
+"Addis Ababa, Ethiopia",,1.19,0.23
+"Adelaide, Australia",,2.98,1.46
+"Agadir, Morocco",,0.55,
+"Ahmedabad, India",,0.93,0.23
+"Ajman, United Arab Emirates",,2.98,0.57
+"Al Khobar, Saudi Arabia",,2.81,
+"Albuquerque, NM, United States",,3.03,1.67
+"Alexandria, Egypt",,0.54,0.41
+"Algiers, Algeria",,0.50,0.36
+"Alicante, Spain",,2.10,
+"Almaty, Kazakhstan",,1.02,0.60
+"Amman, Jordan",,0.59,1.19
+"Amsterdam, Netherlands",,4.15,3.00
+"Anchorage, AK, United States",,2.32,1.57
+"Ankara, Turkey",,0.84,0.62
+"Antalya, Turkey",,0.81,0.58
+"Antwerp, Belgium",,5.00,2.40
+"Astana (Nur-Sultan), Kazakhstan",,1.70,0.68
+"Asuncion, Paraguay",,1.11,0.96
+"Athens, Greece",,3.60,0.95
+"Atlanta, GA, United States",,2.95,1.26
+"Auckland, New Zealand",,2.03,1.78
+"Austin, TX, United States",,2.32,1.36
+"Baghdad, Iraq",,1.93,1.29
+"Baku, Azerbaijan",,1.72,0.50
+"Baltimore, MD, United States",,1.52,1.15
+"Bandung, Indonesia",,0.73,0.48
+"Bangalore, India",,0.93,0.26
+"Bangkok, Thailand",,0.95,1.09
+"Barcelona, Spain",,3.00,1.86
+"Barranquilla, Colombia",,1.84,
+"Basel, Switzerland",,7.13,4.17
+"Batumi, Ajara, Georgia",,0.94,0.54
+"Beijing, China",,1.59,0.30
+"Beirut, Lebanon",,5.58,2.11
+"Belfast, United Kingdom",,4.60,1.32
+"Belgrade, Serbia",,2.72,0.89
+"Belo Horizonte, Brazil",,0.81,0.81
+"Bergamo, Italy",,9.25,2.00
+"Bergen, Norway",,10.44,1.59
+"Berlin, Germany",,5.00,2.80
+"Bern, Switzerland",,7.46,4.17
+"Bhopal, India",,0.93,0.21
+"Bhubaneswar, India",,1.16,0.19
+"Birmingham, United Kingdom",,4.37,2.07
+"Bishkek, Kyrgyzstan",,1.16,0.19
+"Bogota, Colombia",,1.42,1.61
+"Boise, ID, United States",,2.19,1.26
+"Bologna, Italy",,4.10,1.50
+"Bonn, Germany",,2.70,1.78
+"Boston, MA, United States",,2.19,1.47
+"Brasilia, Brazil",,0.87,0.73
+"Brasov, Romania",,0.61,0.61
+"Bratislava, Slovakia",,5.00,1.50
+"Brescia, Italy",,8.00,1.42
+"Brighton, United Kingdom",,4.37,2.30
+"Brisbane, Australia",,2.38,1.56
+"Bristol, United Kingdom",,2.99,1.44
+"Brno, Czech Republic",,2.47,1.65
+"Brooklyn, NY, United States",,2.53,1.83
+"Brussels, Belgium",,3.80,1.90
+"Bucharest, Romania",,0.59,0.59
+"Budapest, Hungary",,2.90,1.16
+"Budva, Montenegro",,1.00,
+"Buenos Aires, Argentina",,1.44,0.80
+"Buffalo, NY, United States",,4.46,1.88
+"Burgas, Bulgaria",,1.34,0.69
+"Cairo, Egypt",,0.36,0.18
+"Calgary, Canada",,2.78,1.19
+"Cambridge, United Kingdom",,5.75,
+"Canberra, Australia",,3.45,1.36
+"Cape Town, South Africa",,1.06,0.87
+"Caracas, Venezuela",,4.21,2.21
+"Cardiff, United Kingdom",,4.02,1.47
+"Casablanca, Morocco",,0.74,0.69
+"Cebu, Philippines",,0.64,0.20
+"Chandigarh, India",,0.93,0.19
+"Charleston, SC, United States",,2.53,1.32
+"Charlotte, NC, United States",,2.53,1.57
+"Chelyabinsk, Russia",,1.64,
+"Chengdu, China",,1.10,0.24
+"Chennai, India",,1.30,0.28
+"Chiang Mai, Thailand",,1.09,0.82
+"Chicago, IL, United States",,2.74,1.18
+"Chisinau, Moldova",,1.74,0.25
+"Chongqing, China",,1.22,0.24
+"Christchurch, New Zealand",,2.29,1.53
+"Cleveland, OH, United States",,2.32,1.18
+"Cluj-Napoca, Romania",,0.84,0.79
+"Coimbatore, India",,0.93,0.19
+"Cologne, Germany",,4.45,2.25
+"Colombo, Sri Lanka",,0.35,0.33
+"Colorado Springs, CO, United States",,3.12,1.18
+"Columbus, OH, United States",,2.53,1.07
+"Copenhagen, Denmark",,5.22,1.54
+"Cordoba, Argentina",,1.01,1.90
+"Cork, Ireland",,4.60,1.35
+"Craiova, Romania",,,0.59
+"Cuenca, Ecuador",,0.51,0.95
+"Curitiba, Brazil",,1.05,0.65
+"Da Nang, Vietnam",,,0.59
+"Dallas, TX, United States",,2.53,1.47
+"Dar es Salaam, Tanzania",,1.25,1.29
+"Davao, Philippines",,0.73,
+"Debrecen, Hungary",,2.77,
+"Delhi, India",,0.74,0.26
+"Denver, CO, United States",,2.95,1.47
+"Dhaka, Bangladesh",,1.03,0.34
+"Dnipro, Ukraine",,1.56,0.68
+"Doha, Qatar",,1.85,1.85
+"Dresden, Germany",,4.00,2.40
+"Dubai, United Arab Emirates",,2.75,0.57
+"Dublin, Ireland",,4.60,1.35
+"Durban, South Africa",,0.61,0.64
+"Dushanbe, Tajikistan",,0.89,0.27
+"Dusseldorf, Germany",,5.00,2.70
+"Edinburgh, United Kingdom",,4.60,1.61
+"Edmonton, Canada",,2.54,1.19
+"Eindhoven, Netherlands",,3.43,2.65
+"Erbil (Irbil), Iraq",,1.69,1.53
+"Espoo, Finland",,8.75,1.55
+"Fethiye, Turkey",,3.86,0.77
+"Florence, Italy",,3.30,1.10
+"Florianopolis, Brazil",,1.29,1.29
+"Fort Lauderdale, FL, United States",,3.79,
+"Fort Worth, TX, United States",,2.53,1.47
+"Frankfurt, Germany",,4.00,2.20
+"Galway, Ireland",,4.67,
+"Gdansk, Poland",,2.08,0.93
+"Geneva, Switzerland",,6.81,3.51
+"George Town, Cayman Islands",,15.94,
+"Glasgow, United Kingdom",,5.06,1.01
+"Gothenburg, Sweden",,7.13,1.59
+"Graz, Austria",,4.20,1.50
+"Groningen, Netherlands",,3.30,2.40
+"Guadalajara, Mexico",,2.45,1.23
+"Guangzhou, China",,1.46,0.34
+"Guayaquil, Ecuador",,2.32,1.47
+"Guelph, Canada",,2.40,
+"Gurgaon, India",,0.93,0.23
+"Haarlem, Netherlands",,,2.45
+"Haifa, Israel",,3.60,1.04
+"Halifax, Canada",,2.91,1.08
+"Hamburg, Germany",,6.00,2.70
+"Hamilton, Canada",,3.03,1.11
+"Hangzhou, China",,1.59,0.37
+"Hanoi, Vietnam",,0.65,0.50
+"Harare, Zimbabwe",,4.21,1.68
+"Helsinki, Finland",,8.45,1.14
+"Heraklion, Greece",,4.00,
+"Ho Chi Minh City, Vietnam",,0.65,0.54
+"Hong Kong, Hong Kong (China)",,3.13,1.13
+"Honolulu, HI, United States",,2.95,2.20
+"Houston, TX, United States",,2.45,1.21
+"Huntsville, AL, United States",,3.62,1.60
+"Hyderabad, India",,0.72,0.33
+"Iasi, Romania",,0.79,0.78
+"Indianapolis, IN, United States",,1.68,1.44
+"Indore, India",,0.47,0.23
+"Islamabad, Pakistan",,0.75,0.36
+"Istanbul, Turkey",,1.04,0.69
+"Izmir, Turkey",,2.32,0.70
+"Jaipur, India",,1.40,0.47
+"Jakarta, Indonesia",,0.45,0.30
+"Jeddah (Jiddah), Saudi Arabia",,2.25,1.46
+"Jersey City, NJ, United States",,2.53,1.73
+"Jerusalem, Israel",,3.38,1.06
+"Johannesburg, South Africa",,0.85,0.79
+"Kaliningrad, Russia",,1.64,
+"Kampala, Uganda",,0.48,0.36
+"Kansas City, MO, United States",,2.11,1.05
+"Kaohsiung, Taiwan",,2.28,0.60
+"Karachi, Pakistan",,0.60,0.60
+"Kathmandu, Nepal",,1.45,1.16
+"Katowice, Poland",,1.66,0.66
+"Kaunas, Lithuania",,1.00,0.79
+"Kazan, Russia",,1.19,
+"Kelowna, Canada",,2.47,
+"Khabarovsk, Russia",,1.91,
+"Kharkiv, Ukraine",,1.12,0.25
+"Kiev (Kyiv), Ukraine",,1.96,0.39
+"Kigali, Rwanda",,,1.16
+"Knoxville, TN, United States",,4.21,1.31
+"Kochi, India",,0.65,0.28
+"Kolkata, India",,0.47,0.28
+"Kosice, Slovakia",,1.50,1.10
+"Krakow (Cracow), Poland",,2.14,0.95
+"Krasnodar, Russia",,1.64,0.25
+"Kuala Lumpur, Malaysia",,1.08,1.08
+"Kuwait City, Kuwait",,,2.41
+"Lahore, Pakistan",,0.60,0.45
+"Larnaca, Cyprus",,6.50,
+"Las Palmas de Gran Canaria, Spain",,3.00,
+"Las Vegas, NV, United States",,2.95,1.57
+"Lausanne, Switzerland",,7.13,4.17
+"Leeds, United Kingdom",,2.76,1.76
+"Leipzig, Germany",,,1.70
+"Lethbridge, AB, Canada",,,2.47
+"Lima, Peru",,3.02,2.01
+"Limassol, Cyprus",,7.00,1.93
+"Lisbon, Portugal",,3.50,0.96
+"Liverpool, United Kingdom",,4.14,2.30
+"Ljubljana, Slovenia",,1.95,1.09
+"Lodz, Poland",,1.45,0.52
+"London, Canada",,2.16,1.45
+"London, United Kingdom",,4.83,2.86
+"Los Angeles, CA, United States",,2.61,1.56
+"Louisville, KY, United States",,2.32,1.18
+"Lucknow (Lakhnau), India",,0.84,0.26
+"Lugano, Switzerland",,6.58,
+"Luxembourg, Luxembourg",,4.20,3.50
+"Lviv, Ukraine",,1.96,
+"Lyon, France",,7.30,1.96
+"Madison, WI, United States",,3.58,1.76
+"Madrid, Spain",,3.50,1.30
+"Makati, Philippines",,0.58,
+"Malaga, Spain",,1.68,1.07
+"Malmo, Sweden",,5.71,2.48
+"Manama, Bahrain",,4.49,2.92
+"Manchester, United Kingdom",,3.91,1.86
+"Manila, Philippines",,0.66,0.21
+"Medellin, Colombia",,1.27,1.53
+"Melbourne, Australia",,3.04,1.18
+"Mexico City, Mexico",,1.28,0.39
+"Miami, FL, United States",,2.49,1.73
+"Milan, Italy",,6.55,2.00
+"Minneapolis, MN, United States",,4.21,1.44
+"Minsk, Belarus",,1.47,0.29
+"Mississauga, Canada",,2.63,1.09
+"Monterrey, Mexico",,1.47,0.98
+"Montevideo, Uruguay",,1.64,0.31
+"Montreal, Canada",,2.94,1.27
+"Moscow, Russia",,2.18,0.49
+"Mumbai, India",,0.28,0.28
+"Munich, Germany",,5.70,2.70
+"Muscat, Oman",,2.75,2.20
+"Nairobi, Kenya",,1.31,1.31
+"Nanjing, China",,1.34,0.33
+"Naples, Italy",,4.00,1.10
+"Nashville, TN, United States",,4.21,1.31
+"Navi Mumbai, India",,0.26,0.28
+"New Orleans, LA, United States",,2.95,
+"New Taipei City, Taiwan",,2.28,
+"New York, NY, United States",,2.53,1.83
+"Newcastle upon Tyne, United Kingdom",,5.75,
+"Nicosia, Cyprus",,5.40,
+"Nis, Serbia",,1.45,0.51
+"Nizhny Novgorod, Russia",,1.64,
+"Noida, India",,0.93,0.23
+"Nottingham, United Kingdom",,2.30,1.29
+"Novi Sad, Serbia",,1.70,0.68
+"Novosibirsk, Russia",,2.18,
+"Nuremberg, Germany",,4.50,2.40
+"Oakland, CA, United States",,2.95,2.02
+"Odessa (Odesa), Ukraine",,1.56,0.29
+"Oklahoma City, OK, United States",,2.32,1.05
+"Olomouc, Czech Republic",,1.20,1.28
+"Omaha, NE, United States",,2.49,1.15
+"Oradea, Romania",,,0.69
+"Orlando, FL, United States",,2.44,1.60
+"Oslo, Norway",,10.09,1.55
+"Ottawa, Canada",,2.35,1.30
+"Oviedo, Spain",,4.25,
+"Oxford, United Kingdom",,4.37,2.76
+"Palma de Mallorca, Spain",,4.45,1.30
+"Panama City, Panama",,2.11,1.55
+"Paris, France",,8.00,1.50
+"Patna, India",,,0.16
+"Pattaya, Thailand",,1.23,1.01
+"Perm, Russia",,1.64,
+"Perth, Australia",,3.63,1.79
+"Philadelphia, PA, United States",,2.27,1.31
+"Phnom Penh, Cambodia",,,0.84
+"Phoenix, AZ, United States",,2.32,1.16
+"Phuket, Thailand",,2.72,
+"Pisa, Italy",,5.50,3.00
+"Pittsburgh, PA, United States",,3.37,1.31
+"Plovdiv, Bulgaria",,1.02,0.56
+"Plzen, Czech Republic",,1.86,1.24
+"Podgorica, Montenegro",,0.65,0.70
+"Portland, OR, United States",,4.21,1.58
+"Porto Alegre, Brazil",,1.29,0.67
+"Porto, Portugal",,3.50,0.75
+"Poznan, Poland",,2.14,0.95
+"Prague, Czech Republic",,2.47,1.44
+"Pretoria, South Africa",,0.26,0.69
+"Pristina, Kosovo (Disputed Territory)",,2.00,0.50
+"Pune, India",,0.37,0.24
+"Qingdao, Shandong, China",,1.22,0.35
+"Quebec City, Canada",,2.54,1.27
+"Queretaro (Santiago de Querétaro), Mexico",,2.94,
+"Quezon City, Philippines",,0.66,
+"Quito, Ecuador",,1.26,1.26
+"Rabat, Morocco",,0.65,0.78
+"Rajkot, India",,0.47,0.19
+"Raleigh, NC, United States",,2.53,1.58
+"Ramat Gan, Israel",,3.95,
+"Rawalpindi, Pakistan",,0.75,0.30
+"Reading, United Kingdom",,5.75,
+"Regina, Canada",,3.15,
+"Remagen, Germany",,4.00,2.50
+"Reno, NV, United States",,,2.15
+"Reykjavik, Iceland",,5.65,2.38
+"Riga, Latvia",,3.00,0.71
+"Rio de Janeiro, Brazil",,0.98,0.65
+"Riyadh, Saudi Arabia",,2.70,1.58
+"Rome, Italy",,5.00,1.50
+"Rostov-on-Don (Rostov-na-donu), Russia",,3.27,
+"Rotterdam, Netherlands",,4.15,2.98
+"Sacramento, CA, United States",,3.37,1.58
+"Saint Louis, MO, United States",,2.95,1.31
+"Saint Petersburg, Russia",,3.27,0.65
+"Salt Lake City, UT, United States",,2.11,1.94
+"San Antonio, TX, United States",,2.95,1.52
+"San Diego, CA, United States",,2.53,1.74
+"San Francisco, CA, United States",,3.50,1.71
+"San Jose, CA, United States",,2.95,2.53
+"San Jose, Costa Rica",,1.93,1.26
+"San Salvador, El Salvador",,4.63,2.53
+"Santa Cruz, Bolivia",,2.44,
+"Santiago, Chile",,0.39,0.78
+"Santo Domingo, Dominican Republic",,2.71,1.83
+"Sao Paulo, Brazil",,0.98,0.69
+"Sarajevo, Bosnia And Herzegovina",,1.28,0.77
+"Seattle, WA, United States",,2.19,1.41
+"Seoul, South Korea",,2.81,0.50
+"Seville (Sevilla), Spain",,1.52,0.96
+"Shanghai, China",,1.89,0.37
+"Sharjah, United Arab Emirates",,3.15,
+"Sheffield, United Kingdom",,4.60,
+"Shenzhen, China",,1.22,0.33
+"Sibiu, Romania",,,0.79
+"Singapore, Singapore",,3.07,0.67
+"Skopje, North Macedonia",,0.81,0.61
+"Sliema, Malta",,5.00,2.00
+"Sofia, Bulgaria",,1.50,0.82
+"Sousse, Tunisia",,0.29,
+"Southampton, United Kingdom",,3.68,
+"Split, Croatia",,3.32,1.86
+"Spokane, WA, United States",,4.21,1.47
+"St. John's, Newfoundland and Labrador, Canada",,2.78,1.55
+"Stara Zagora, Bulgaria",,1.18,0.56
+"Stavanger, Norway",,5.22,1.46
+"Stockholm, Sweden",,5.57,1.42
+"Strasbourg, France",,3.00,1.78
+"Stuttgart, Germany",,4.20,2.50
+"Surat, India",,0.51,
+"Suzhou, China",,1.41,0.30
+"Sydney, Australia",,2.98,1.49
+"Szczecin, Poland",,1.84,1.07
+"Szeged, Hungary",,2.59,1.45
+"Tacoma, WA, United States",,2.19,1.41
+"Taichung, Taiwan",,2.28,
+"Taipei, Taiwan",,2.28,0.67
+"Tallinn, Estonia",,4.00,1.00
+"Tampa, FL, United States",,2.11,1.26
+"Tartu, Estonia",,3.20,0.90
+"Tashkent, Uzbekistan",,0.69,0.29
+"Tbilisi, Georgia",,1.18,0.63
+"Tehran, Iran",,0.38,0.25
+"Tel Aviv-Yafo, Israel",,3.60,0.94
+"Thane, India",,0.29,0.25
+"The Hague (Den Haag), Netherlands",,4.15,3.05
+"Thessaloniki, Greece",,3.50,0.90
+"Timisoara, Romania",,0.78,0.79
+"Tirana, Albania",,3.11,3.11
+"Tokyo, Japan",,2.76,2.76
+"Tomsk, Russia",,1.42,
+"Toronto, Canada",,2.63,1.08
+"Toulouse, France",,7.30,2.04
+"Trieste, Italy",,7.75,1.65
+"Trondheim, Norway",,7.88,1.34
+"Tucson, AZ, United States",,2.32,
+"Tulsa, OK, United States",,1.68,1.05
+"Tunis, Tunisia",,0.27,0.28
+"Turin, Italy",,4.00,1.35
+"Turku, Finland",,7.00,
+"Tyumen, Russia",,1.58,
+"Ufa, Russia",,1.08,
+"Ulaanbaatar, Mongolia",,0.45,0.45
+"Uppsala, Sweden",,5.10,1.23
+"Utrecht, Netherlands",,3.36,2.40
+"Vadodara, India",,0.65,0.23
+"Valencia, Spain",,3.50,1.18
+"Valletta, Malta",,3.50,1.60
+"Vancouver, Canada",,2.47,1.41
+"Varna, Bulgaria",,1.33,0.66
+"Victoria, Canada",,2.38,1.39
+"Vienna, Austria",,4.80,1.90
+"Vilnius, Lithuania",,2.75,1.10
+"Warsaw, Poland",,2.37,1.19
+"Washington, DC, United States",,3.37,1.34
+"Wellington, New Zealand",,1.93,1.63
+"Wichita, KS, United States",,2.11,1.31
+"Windhoek, Namibia",,0.68,0.74
+"Winnipeg, Canada",,2.46,1.18
+"Wroclaw, Poland",,2.37,0.82
+"Wuhan, China",,1.22,0.24
+"Yekaterinburg, Russia",,2.12,
+"Yerevan, Armenia",,1.12,0.29
+"Zagreb, Croatia",,2.00,1.00
+"Zurich, Switzerland",,7.40,4.17
