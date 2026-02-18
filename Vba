@@ -1,0 +1,157 @@
+Sub Process_Files_ConfigDriven()
+
+    Dim wsRaw As Worksheet, wsLookup As Worksheet
+    Dim folderPath As String, fileName As String
+    Dim wbSource As Workbook, wsSource As Worksheet
+    Dim lastRow As Long, lastCol As Long
+    Dim sourceType As String
+    Dim filterColHeader As String
+    Dim dict As Object, colDict As Object
+    Dim i As Long, j As Long
+    Dim splitValue As String
+    Dim newWb As Workbook, newWs As Worksheet
+    
+    Set wsRaw = ThisWorkbook.Sheets("RawData")
+    Set wsLookup = ThisWorkbook.Sheets("Lookup")
+    
+    ' ===== SETTINGS =====
+    
+    filterColHeader = "Country"    ' Column used to split files
+    sourceType = wsLookup.Range("B1").Value   ' Source type (Car/Hotel)
+    
+    ' ====================
+    
+    ' Select folder
+    With Application.FileDialog(msoFileDialogFolderPicker)
+        If .Show <> -1 Then Exit Sub
+        folderPath = .SelectedItems(1) & "\"
+    End With
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+    
+    fileName = Dir(folderPath & "*.xls*")
+    
+    Do While fileName <> ""
+        
+        ' ===== OPEN SOURCE FILE =====
+        
+        Set wbSource = Workbooks.Open(folderPath & fileName)
+        Set wsSource = wbSource.Sheets(1)
+        
+        wsRaw.Cells.Clear
+        wsSource.UsedRange.Copy wsRaw.Range("A1")
+        
+        wbSource.Close False
+        
+        lastCol = wsRaw.Cells(1, wsRaw.Columns.Count).End(xlToLeft).Column
+        lastRow = wsRaw.Cells(wsRaw.Rows.Count, 1).End(xlUp).Row
+        
+        ' ===== ADD 3 NEW COLUMNS =====
+        
+        wsRaw.Cells(1, lastCol + 1).Value = "New1"
+        wsRaw.Cells(1, lastCol + 2).Value = "New2"
+        wsRaw.Cells(1, lastCol + 3).Value = "New3"
+        
+        wsRaw.Cells(2, lastCol + 1).Formula = "=TODAY()"
+        wsRaw.Cells(2, lastCol + 2).Formula = "=ROW()"
+        wsRaw.Cells(2, lastCol + 3).Formula = "=1"
+        
+        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
+                    wsRaw.Cells(lastRow, lastCol + 3)).FillDown
+        
+        ' Convert to values
+        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
+                    wsRaw.Cells(lastRow, lastCol + 3)).Value = _
+        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
+                    wsRaw.Cells(lastRow, lastCol + 3)).Value
+        
+        ' ===== GET REQUIRED COLUMNS FROM LOOKUP =====
+        
+        Set colDict = CreateObject("Scripting.Dictionary")
+        
+        Dim lookupLastRow As Long
+        lookupLastRow = wsLookup.Cells(wsLookup.Rows.Count, 1).End(xlUp).Row
+        
+        For i = 2 To lookupLastRow
+            If wsLookup.Cells(i, 1).Value = sourceType Then
+                colDict(wsLookup.Cells(i, 2).Value) = True
+            End If
+        Next i
+        
+        ' ===== FIND COLUMN INDEXES IN RAWDATA =====
+        
+        Dim colIndex As Object
+        Set colIndex = CreateObject("Scripting.Dictionary")
+        
+        For j = 1 To wsRaw.Cells(1, wsRaw.Columns.Count).End(xlToLeft).Column
+            colIndex(wsRaw.Cells(1, j).Value) = j
+        Next j
+        
+        ' ===== FIND FILTER COLUMN =====
+        
+        Dim filterCol As Long
+        filterCol = colIndex(filterColHeader)
+        
+        ' ===== GET UNIQUE VALUES =====
+        
+        Set dict = CreateObject("Scripting.Dictionary")
+        
+        For i = 2 To lastRow
+            splitValue = wsRaw.Cells(i, filterCol).Value
+            If splitValue <> "" Then
+                If Not dict.exists(splitValue) Then
+                    dict.Add splitValue, Nothing
+                End If
+            End If
+        Next i
+        
+        ' ===== SPLIT FILES =====
+        
+        For Each splitValue In dict.Keys
+            
+            wsRaw.AutoFilterMode = False
+            wsRaw.Range("A1").CurrentRegion.AutoFilter _
+                Field:=filterCol, Criteria1:=splitValue
+            
+            ' Create new workbook
+            Set newWb = Workbooks.Add
+            Set newWs = newWb.Sheets(1)
+            
+            Dim newCol As Long
+            newCol = 1
+            
+            ' Copy only required columns
+            For Each j In colDict.Keys
+                
+                If colIndex.exists(j) Then
+                    
+                    wsRaw.Range(wsRaw.Cells(1, colIndex(j)), _
+                                wsRaw.Cells(lastRow, colIndex(j))) _
+                                .SpecialCells(xlCellTypeVisible).Copy
+                    
+                    newWs.Cells(1, newCol).PasteSpecial xlPasteValues
+                    
+                    newCol = newCol + 1
+                    
+                End If
+                
+            Next j
+            
+            newWb.SaveAs folderPath & splitValue & "_" & fileName
+            newWb.Close False
+            
+        Next splitValue
+        
+        fileName = Dir
+        
+    Loop
+    
+    wsRaw.AutoFilterMode = False
+    
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+    
+    MsgBox "All files processed successfully!", vbInformation
+
+End Sub
