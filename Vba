@@ -1,59 +1,50 @@
 import os
 import shutil
+import pandas as pd
 import win32com.client as win32
 from datetime import datetime
 
-# ========= CONFIG =========
+# =========================================================
+# CONFIG
+# =========================================================
 
-SOURCE_FOLDER = r"C:\ExcelFiles"
-COMPLETED_FOLDER = r"C:\Processed"
-ERROR_LOG_FILE = r"C:\Processed\error_log.txt"
+SOURCE_FOLDER = r"C:\SOURCE"
+OUTPUT_FOLDER = r"C:\OUTPUT"
+ERROR_LOG_FILE = r"C:\OUTPUT\error_log.txt"
 
-LOOKUP_FILE = r"C:\Lookup\lookup.xlsx"
-LOOKUP_SHEET = "Sheet1"
+# lookup_df already exists in memory
+# It must contain:
+# tool_key | Gender Flag | Category Label
 
-# ==========================
+# =========================================================
+# BUILD LOOKUP DICTIONARIES (FASTEST)
+# =========================================================
 
-app = win32.Dispatch("Excel.Application")
+lookup_df = lookup_df[
+    ["tool_key", "Gender Flag", "Category Label"]
+].dropna(subset=["tool_key"])
+
+lookup_df["tool_key"] = lookup_df["tool_key"].astype(str)
+
+gender_map = dict(zip(lookup_df["tool_key"], lookup_df["Gender Flag"]))
+category_map = dict(zip(lookup_df["tool_key"], lookup_df["Category Label"]))
+
+# =========================================================
+# START EXCEL
+# =========================================================
+
+app = win32.DispatchEx("Excel.Application")
 app.Visible = False
 app.DisplayAlerts = False
 app.ScreenUpdating = False
-
-# =====================================================
-# Build lookup dictionary (VERY FAST)
-# =====================================================
-
-lookup_dict = {}
-
-lookup_wb = app.Workbooks.Open(LOOKUP_FILE)
-lookup_ws = lookup_wb.Sheets(LOOKUP_SHEET)
-
-last_row = lookup_ws.Cells(lookup_ws.Rows.Count, 1).End(-4162).Row
-last_col = lookup_ws.Cells(1, lookup_ws.Columns.Count).End(-4159).Column
-
-data = lookup_ws.Range(
-    lookup_ws.Cells(1, 1),
-    lookup_ws.Cells(last_row, last_col)
-).Value
-
-lookup_headers = list(data[0])[1:]  # skip key column
-
-for row in data[1:]:
-    key = row[0]
-    if key:
-        lookup_dict[str(key)] = row[1:]
-
-lookup_wb.Close(False)
-
-# =====================================================
-# Prepare error log
-# =====================================================
+app.EnableEvents = False
+app.Calculation = -4135  # Manual
 
 errors = []
 
-# =====================================================
-# Process files
-# =====================================================
+# =========================================================
+# PROCESS FILES
+# =========================================================
 
 for file in os.listdir(SOURCE_FOLDER):
 
@@ -63,132 +54,115 @@ for file in os.listdir(SOURCE_FOLDER):
     file_path = os.path.join(SOURCE_FOLDER, file)
 
     try:
-        wb = app.Workbooks.Open(file_path)
-        ws = wb.Sheets(1)
+        # --------------------------------------------
+        # READ FILE WITH PANDAS
+        # --------------------------------------------
+        df = pd.read_excel(file_path)
 
-        print("Processing:", file)
-
-        # -------------------------------------------
-        # Read header row
-        # -------------------------------------------
-        last_col = ws.Cells(1, ws.Columns.Count).End(-4159).Column
-
-        headers = ws.Range(
-            ws.Cells(1, 1),
-            ws.Cells(1, last_col)
-        ).Value[0]
-
-        headers_lower = [str(h).strip().lower() if h else "" for h in headers]
+        cols_lower = {c.lower(): c for c in df.columns}
 
         dep_col = None
-        email_col = None
+        for c in cols_lower:
+            if c in ("departure date", "check-in date"):
+                dep_col = cols_lower[c]
+                break
 
-        for i, h in enumerate(headers_lower):
-            if h in ("departure date", "check-in date"):
-                dep_col = i + 1
-            elif h == "employee email":
-                email_col = i + 1
+        email_col = cols_lower.get("employee email")
 
         if dep_col is None or email_col is None:
             errors.append(file)
-            wb.Close(False)
             continue
 
-        # Normalize header
-        ws.Cells(1, dep_col).Value = "Departure Date"
+        # Normalize column name
+        df.rename(columns={dep_col: "Departure Date"}, inplace=True)
 
-        # -------------------------------------------
-        # Get data range
-        # -------------------------------------------
-        last_row = ws.Cells(ws.Rows.Count, dep_col).End(-4162).Row
+        # --------------------------------------------
+        # CREATE NEW DATAFRAME WITH REQUIRED COLUMNS
+        # --------------------------------------------
+        sub_df = df[["Departure Date", email_col]].copy()
+        sub_df.rename(columns={email_col: "Employee Email"}, inplace=True)
 
-        data_range = ws.Range(
-            ws.Cells(2, 1),
-            ws.Cells(last_row, last_col)
-        ).Value
+        # --------------------------------------------
+        # CREATE TOOL KEY
+        # --------------------------------------------
+        sub_df["Departure Date"] = pd.to_datetime(
+            sub_df["Departure Date"],
+            errors="coerce"
+        )
 
-        # -------------------------------------------
-        # Build merged output in memory
-        # -------------------------------------------
-        output_data = []
+        sub_df["tool_key"] = (
+            sub_df["Employee Email"].astype(str)
+            + "_"
+            + sub_df["Departure Date"].dt.year.astype("Int64").astype(str)
+            + "_"
+            + sub_df["Departure Date"].dt.month.astype("Int64").astype(str)
+        )
 
-        for row in data_range:
+        # --------------------------------------------
+        # LOOKUP VALUES
+        # --------------------------------------------
+        sub_df["Gender Flag"] = sub_df["tool_key"].map(gender_map)
+        sub_df["Category Label"] = sub_df["tool_key"].map(category_map)
 
-            email = row[email_col - 1]
-            date = row[dep_col - 1]
+        # Fill missing with blank
+        sub_df.fillna("", inplace=True)
 
-            if not email or not date:
-                output_data.append([""] * len(lookup_headers))
-                continue
+        # =================================================
+        # WRITE BACK TO EXCEL USING COM
+        # =================================================
 
-            if isinstance(date, datetime):
-                year = date.year
-                month = date.month
-            else:
-                try:
-                    d = datetime.fromisoformat(str(date))
-                    year = d.year
-                    month = d.month
-                except:
-                    output_data.append([""] * len(lookup_headers))
-                    continue
+        wb = app.Workbooks.Open(file_path)
+        ws = wb.Sheets(1)
 
-            key = f"{email}_{year}_{month}"
+        last_col = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+        last_row = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
 
-            values = lookup_dict.get(key, [""] * len(lookup_headers))
-            output_data.append(values)
+        # Headers to append
+        new_headers = ["Gender Flag", "Category Label"]
 
-        # -------------------------------------------
         # Write headers
-        # -------------------------------------------
-        paste_col = last_col + 1
+        ws.Range(
+            ws.Cells(1, last_col + 1),
+            ws.Cells(1, last_col + len(new_headers))
+        ).Value = new_headers
+
+        # Write data (FAST bulk)
+        values = sub_df[new_headers].values.tolist()
 
         ws.Range(
-            ws.Cells(1, paste_col),
-            ws.Cells(1, paste_col + len(lookup_headers) - 1)
-        ).Value = lookup_headers
+            ws.Cells(2, last_col + 1),
+            ws.Cells(last_row, last_col + len(new_headers))
+        ).Value = values
 
-        # -------------------------------------------
-        # Write merged values (FAST bulk write)
-        # -------------------------------------------
-        ws.Range(
-            ws.Cells(2, paste_col),
-            ws.Cells(last_row, paste_col + len(lookup_headers) - 1)
-        ).Value = output_data
-
-        # -------------------------------------------
         # Format header
-        # -------------------------------------------
         header_rng = ws.Range(
-            ws.Cells(1, paste_col),
-            ws.Cells(1, paste_col + len(lookup_headers) - 1)
+            ws.Cells(1, last_col + 1),
+            ws.Cells(1, last_col + len(new_headers))
         )
 
         header_rng.Font.Bold = True
         header_rng.Interior.Color = 0x00FFFF
 
-        wb.Save()
-        wb.Close()
-
-        # -------------------------------------------
-        # Move file to completed folder
-        # -------------------------------------------
-        shutil.move(file_path, os.path.join(COMPLETED_FOLDER, file))
+        # Save to OUTPUT folder
+        output_path = os.path.join(OUTPUT_FOLDER, file)
+        wb.SaveAs(output_path)
+        wb.Close(False)
 
     except Exception as e:
         errors.append(file)
         print("Error:", file, e)
 
-# =====================================================
-# Write error log
-# =====================================================
+# =========================================================
+# CLEANUP
+# =========================================================
 
+app.Quit()
+
+# Write error log
 if errors:
     with open(ERROR_LOG_FILE, "w") as f:
         f.write("Files with missing columns or errors:\n")
         for e in errors:
             f.write(e + "\n")
-
-app.Quit()
 
 print("Processing completed.")
