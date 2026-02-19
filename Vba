@@ -1,157 +1,194 @@
-Sub Process_Files_ConfigDriven()
+import os
+import shutil
+import win32com.client as win32
+from datetime import datetime
 
-    Dim wsRaw As Worksheet, wsLookup As Worksheet
-    Dim folderPath As String, fileName As String
-    Dim wbSource As Workbook, wsSource As Worksheet
-    Dim lastRow As Long, lastCol As Long
-    Dim sourceType As String
-    Dim filterColHeader As String
-    Dim dict As Object, colDict As Object
-    Dim i As Long, j As Long
-    Dim splitValue As String
-    Dim newWb As Workbook, newWs As Worksheet
-    
-    Set wsRaw = ThisWorkbook.Sheets("RawData")
-    Set wsLookup = ThisWorkbook.Sheets("Lookup")
-    
-    ' ===== SETTINGS =====
-    
-    filterColHeader = "Country"    ' Column used to split files
-    sourceType = wsLookup.Range("B1").Value   ' Source type (Car/Hotel)
-    
-    ' ====================
-    
-    ' Select folder
-    With Application.FileDialog(msoFileDialogFolderPicker)
-        If .Show <> -1 Then Exit Sub
-        folderPath = .SelectedItems(1) & "\"
-    End With
-    
-    Application.ScreenUpdating = False
-    Application.DisplayAlerts = False
-    
-    fileName = Dir(folderPath & "*.xls*")
-    
-    Do While fileName <> ""
-        
-        ' ===== OPEN SOURCE FILE =====
-        
-        Set wbSource = Workbooks.Open(folderPath & fileName)
-        Set wsSource = wbSource.Sheets(1)
-        
-        wsRaw.Cells.Clear
-        wsSource.UsedRange.Copy wsRaw.Range("A1")
-        
-        wbSource.Close False
-        
-        lastCol = wsRaw.Cells(1, wsRaw.Columns.Count).End(xlToLeft).Column
-        lastRow = wsRaw.Cells(wsRaw.Rows.Count, 1).End(xlUp).Row
-        
-        ' ===== ADD 3 NEW COLUMNS =====
-        
-        wsRaw.Cells(1, lastCol + 1).Value = "New1"
-        wsRaw.Cells(1, lastCol + 2).Value = "New2"
-        wsRaw.Cells(1, lastCol + 3).Value = "New3"
-        
-        wsRaw.Cells(2, lastCol + 1).Formula = "=TODAY()"
-        wsRaw.Cells(2, lastCol + 2).Formula = "=ROW()"
-        wsRaw.Cells(2, lastCol + 3).Formula = "=1"
-        
-        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
-                    wsRaw.Cells(lastRow, lastCol + 3)).FillDown
-        
-        ' Convert to values
-        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
-                    wsRaw.Cells(lastRow, lastCol + 3)).Value = _
-        wsRaw.Range(wsRaw.Cells(2, lastCol + 1), _
-                    wsRaw.Cells(lastRow, lastCol + 3)).Value
-        
-        ' ===== GET REQUIRED COLUMNS FROM LOOKUP =====
-        
-        Set colDict = CreateObject("Scripting.Dictionary")
-        
-        Dim lookupLastRow As Long
-        lookupLastRow = wsLookup.Cells(wsLookup.Rows.Count, 1).End(xlUp).Row
-        
-        For i = 2 To lookupLastRow
-            If wsLookup.Cells(i, 1).Value = sourceType Then
-                colDict(wsLookup.Cells(i, 2).Value) = True
-            End If
-        Next i
-        
-        ' ===== FIND COLUMN INDEXES IN RAWDATA =====
-        
-        Dim colIndex As Object
-        Set colIndex = CreateObject("Scripting.Dictionary")
-        
-        For j = 1 To wsRaw.Cells(1, wsRaw.Columns.Count).End(xlToLeft).Column
-            colIndex(wsRaw.Cells(1, j).Value) = j
-        Next j
-        
-        ' ===== FIND FILTER COLUMN =====
-        
-        Dim filterCol As Long
-        filterCol = colIndex(filterColHeader)
-        
-        ' ===== GET UNIQUE VALUES =====
-        
-        Set dict = CreateObject("Scripting.Dictionary")
-        
-        For i = 2 To lastRow
-            splitValue = wsRaw.Cells(i, filterCol).Value
-            If splitValue <> "" Then
-                If Not dict.exists(splitValue) Then
-                    dict.Add splitValue, Nothing
-                End If
-            End If
-        Next i
-        
-        ' ===== SPLIT FILES =====
-        
-        For Each splitValue In dict.Keys
-            
-            wsRaw.AutoFilterMode = False
-            wsRaw.Range("A1").CurrentRegion.AutoFilter _
-                Field:=filterCol, Criteria1:=splitValue
-            
-            ' Create new workbook
-            Set newWb = Workbooks.Add
-            Set newWs = newWb.Sheets(1)
-            
-            Dim newCol As Long
-            newCol = 1
-            
-            ' Copy only required columns
-            For Each j In colDict.Keys
-                
-                If colIndex.exists(j) Then
-                    
-                    wsRaw.Range(wsRaw.Cells(1, colIndex(j)), _
-                                wsRaw.Cells(lastRow, colIndex(j))) _
-                                .SpecialCells(xlCellTypeVisible).Copy
-                    
-                    newWs.Cells(1, newCol).PasteSpecial xlPasteValues
-                    
-                    newCol = newCol + 1
-                    
-                End If
-                
-            Next j
-            
-            newWb.SaveAs folderPath & splitValue & "_" & fileName
-            newWb.Close False
-            
-        Next splitValue
-        
-        fileName = Dir
-        
-    Loop
-    
-    wsRaw.AutoFilterMode = False
-    
-    Application.ScreenUpdating = True
-    Application.DisplayAlerts = True
-    
-    MsgBox "All files processed successfully!", vbInformation
+# ========= CONFIG =========
 
-End Sub
+SOURCE_FOLDER = r"C:\ExcelFiles"
+COMPLETED_FOLDER = r"C:\Processed"
+ERROR_LOG_FILE = r"C:\Processed\error_log.txt"
+
+LOOKUP_FILE = r"C:\Lookup\lookup.xlsx"
+LOOKUP_SHEET = "Sheet1"
+
+# ==========================
+
+app = win32.Dispatch("Excel.Application")
+app.Visible = False
+app.DisplayAlerts = False
+app.ScreenUpdating = False
+
+# =====================================================
+# Build lookup dictionary (VERY FAST)
+# =====================================================
+
+lookup_dict = {}
+
+lookup_wb = app.Workbooks.Open(LOOKUP_FILE)
+lookup_ws = lookup_wb.Sheets(LOOKUP_SHEET)
+
+last_row = lookup_ws.Cells(lookup_ws.Rows.Count, 1).End(-4162).Row
+last_col = lookup_ws.Cells(1, lookup_ws.Columns.Count).End(-4159).Column
+
+data = lookup_ws.Range(
+    lookup_ws.Cells(1, 1),
+    lookup_ws.Cells(last_row, last_col)
+).Value
+
+lookup_headers = list(data[0])[1:]  # skip key column
+
+for row in data[1:]:
+    key = row[0]
+    if key:
+        lookup_dict[str(key)] = row[1:]
+
+lookup_wb.Close(False)
+
+# =====================================================
+# Prepare error log
+# =====================================================
+
+errors = []
+
+# =====================================================
+# Process files
+# =====================================================
+
+for file in os.listdir(SOURCE_FOLDER):
+
+    if not file.lower().endswith(".xlsx"):
+        continue
+
+    file_path = os.path.join(SOURCE_FOLDER, file)
+
+    try:
+        wb = app.Workbooks.Open(file_path)
+        ws = wb.Sheets(1)
+
+        print("Processing:", file)
+
+        # -------------------------------------------
+        # Read header row
+        # -------------------------------------------
+        last_col = ws.Cells(1, ws.Columns.Count).End(-4159).Column
+
+        headers = ws.Range(
+            ws.Cells(1, 1),
+            ws.Cells(1, last_col)
+        ).Value[0]
+
+        headers_lower = [str(h).strip().lower() if h else "" for h in headers]
+
+        dep_col = None
+        email_col = None
+
+        for i, h in enumerate(headers_lower):
+            if h in ("departure date", "check-in date"):
+                dep_col = i + 1
+            elif h == "employee email":
+                email_col = i + 1
+
+        if dep_col is None or email_col is None:
+            errors.append(file)
+            wb.Close(False)
+            continue
+
+        # Normalize header
+        ws.Cells(1, dep_col).Value = "Departure Date"
+
+        # -------------------------------------------
+        # Get data range
+        # -------------------------------------------
+        last_row = ws.Cells(ws.Rows.Count, dep_col).End(-4162).Row
+
+        data_range = ws.Range(
+            ws.Cells(2, 1),
+            ws.Cells(last_row, last_col)
+        ).Value
+
+        # -------------------------------------------
+        # Build merged output in memory
+        # -------------------------------------------
+        output_data = []
+
+        for row in data_range:
+
+            email = row[email_col - 1]
+            date = row[dep_col - 1]
+
+            if not email or not date:
+                output_data.append([""] * len(lookup_headers))
+                continue
+
+            if isinstance(date, datetime):
+                year = date.year
+                month = date.month
+            else:
+                try:
+                    d = datetime.fromisoformat(str(date))
+                    year = d.year
+                    month = d.month
+                except:
+                    output_data.append([""] * len(lookup_headers))
+                    continue
+
+            key = f"{email}_{year}_{month}"
+
+            values = lookup_dict.get(key, [""] * len(lookup_headers))
+            output_data.append(values)
+
+        # -------------------------------------------
+        # Write headers
+        # -------------------------------------------
+        paste_col = last_col + 1
+
+        ws.Range(
+            ws.Cells(1, paste_col),
+            ws.Cells(1, paste_col + len(lookup_headers) - 1)
+        ).Value = lookup_headers
+
+        # -------------------------------------------
+        # Write merged values (FAST bulk write)
+        # -------------------------------------------
+        ws.Range(
+            ws.Cells(2, paste_col),
+            ws.Cells(last_row, paste_col + len(lookup_headers) - 1)
+        ).Value = output_data
+
+        # -------------------------------------------
+        # Format header
+        # -------------------------------------------
+        header_rng = ws.Range(
+            ws.Cells(1, paste_col),
+            ws.Cells(1, paste_col + len(lookup_headers) - 1)
+        )
+
+        header_rng.Font.Bold = True
+        header_rng.Interior.Color = 0x00FFFF
+
+        wb.Save()
+        wb.Close()
+
+        # -------------------------------------------
+        # Move file to completed folder
+        # -------------------------------------------
+        shutil.move(file_path, os.path.join(COMPLETED_FOLDER, file))
+
+    except Exception as e:
+        errors.append(file)
+        print("Error:", file, e)
+
+# =====================================================
+# Write error log
+# =====================================================
+
+if errors:
+    with open(ERROR_LOG_FILE, "w") as f:
+        f.write("Files with missing columns or errors:\n")
+        for e in errors:
+            f.write(e + "\n")
+
+app.Quit()
+
+print("Processing completed.")
