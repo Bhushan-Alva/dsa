@@ -1,168 +1,26 @@
-import os
-import shutil
-import pandas as pd
-import win32com.client as win32
-from datetime import datetime
+import win32com.client
+import pyautogui
+import time
 
-# =========================================================
-# CONFIG
-# =========================================================
+file_path = r"C:\Users\YourName\Documents\test.xlsx"
 
-SOURCE_FOLDER = r"C:\SOURCE"
-OUTPUT_FOLDER = r"C:\OUTPUT"
-ERROR_LOG_FILE = r"C:\OUTPUT\error_log.txt"
+excel = win32com.client.Dispatch("Excel.Application")
+excel.Visible = True
 
-# lookup_df already exists in memory
-# It must contain:
-# tool_key | Gender Flag | Category Label
+wb = excel.Workbooks.Open(file_path)
 
-# =========================================================
-# BUILD LOOKUP DICTIONARIES (FASTEST)
-# =========================================================
+time.sleep(5)  # Wait for Excel UI to load
 
-lookup_df = lookup_df[
-    ["tool_key", "Gender Flag", "Category Label"]
-].dropna(subset=["tool_key"])
+# Example: Click label dropdown (coordinates must be adjusted)
+pyautogui.click(300, 150)
 
-lookup_df["tool_key"] = lookup_df["tool_key"].astype(str)
+time.sleep(1)
 
-gender_map = dict(zip(lookup_df["tool_key"], lookup_df["Gender Flag"]))
-category_map = dict(zip(lookup_df["tool_key"], lookup_df["Category Label"]))
+# Click specific label option
+pyautogui.click(300, 200)
 
-# =========================================================
-# START EXCEL
-# =========================================================
+time.sleep(1)
 
-app = win32.DispatchEx("Excel.Application")
-app.Visible = False
-app.DisplayAlerts = False
-app.ScreenUpdating = False
-app.EnableEvents = False
-app.Calculation = -4135  # Manual
-
-errors = []
-
-# =========================================================
-# PROCESS FILES
-# =========================================================
-
-for file in os.listdir(SOURCE_FOLDER):
-
-    if not file.lower().endswith(".xlsx"):
-        continue
-
-    file_path = os.path.join(SOURCE_FOLDER, file)
-
-    try:
-        # --------------------------------------------
-        # READ FILE WITH PANDAS
-        # --------------------------------------------
-        df = pd.read_excel(file_path)
-
-        cols_lower = {c.lower(): c for c in df.columns}
-
-        dep_col = None
-        for c in cols_lower:
-            if c in ("departure date", "check-in date"):
-                dep_col = cols_lower[c]
-                break
-
-        email_col = cols_lower.get("employee email")
-
-        if dep_col is None or email_col is None:
-            errors.append(file)
-            continue
-
-        # Normalize column name
-        df.rename(columns={dep_col: "Departure Date"}, inplace=True)
-
-        # --------------------------------------------
-        # CREATE NEW DATAFRAME WITH REQUIRED COLUMNS
-        # --------------------------------------------
-        sub_df = df[["Departure Date", email_col]].copy()
-        sub_df.rename(columns={email_col: "Employee Email"}, inplace=True)
-
-        # --------------------------------------------
-        # CREATE TOOL KEY
-        # --------------------------------------------
-        sub_df["Departure Date"] = pd.to_datetime(
-            sub_df["Departure Date"],
-            errors="coerce"
-        )
-
-        sub_df["tool_key"] = (
-            sub_df["Employee Email"].astype(str)
-            + "_"
-            + sub_df["Departure Date"].dt.year.astype("Int64").astype(str)
-            + "_"
-            + sub_df["Departure Date"].dt.month.astype("Int64").astype(str)
-        )
-
-        # --------------------------------------------
-        # LOOKUP VALUES
-        # --------------------------------------------
-        sub_df["Gender Flag"] = sub_df["tool_key"].map(gender_map)
-        sub_df["Category Label"] = sub_df["tool_key"].map(category_map)
-
-        # Fill missing with blank
-        sub_df.fillna("", inplace=True)
-
-        # =================================================
-        # WRITE BACK TO EXCEL USING COM
-        # =================================================
-
-        wb = app.Workbooks.Open(file_path)
-        ws = wb.Sheets(1)
-
-        last_col = ws.Cells(1, ws.Columns.Count).End(-4159).Column
-        last_row = ws.Cells(ws.Rows.Count, 1).End(-4162).Row
-
-        # Headers to append
-        new_headers = ["Gender Flag", "Category Label"]
-
-        # Write headers
-        ws.Range(
-            ws.Cells(1, last_col + 1),
-            ws.Cells(1, last_col + len(new_headers))
-        ).Value = new_headers
-
-        # Write data (FAST bulk)
-        values = sub_df[new_headers].values.tolist()
-
-        ws.Range(
-            ws.Cells(2, last_col + 1),
-            ws.Cells(last_row, last_col + len(new_headers))
-        ).Value = values
-
-        # Format header
-        header_rng = ws.Range(
-            ws.Cells(1, last_col + 1),
-            ws.Cells(1, last_col + len(new_headers))
-        )
-
-        header_rng.Font.Bold = True
-        header_rng.Interior.Color = 0x00FFFF
-
-        # Save to OUTPUT folder
-        output_path = os.path.join(OUTPUT_FOLDER, file)
-        wb.SaveAs(output_path)
-        wb.Close(False)
-
-    except Exception as e:
-        errors.append(file)
-        print("Error:", file, e)
-
-# =========================================================
-# CLEANUP
-# =========================================================
-
-app.Quit()
-
-# Write error log
-if errors:
-    with open(ERROR_LOG_FILE, "w") as f:
-        f.write("Files with missing columns or errors:\n")
-        for e in errors:
-            f.write(e + "\n")
-
-print("Processing completed.")
+wb.Save()
+wb.Close()
+excel.Quit()
