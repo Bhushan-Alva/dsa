@@ -1,144 +1,115 @@
-import pandas as pd
-import numpy as np
-from scipy.stats.mstats import winsorize
+Build a data processing and estimation engine (Excel VBA or Python) for monthly utility data across multiple countries and facilities.
 
-# =========================================
-# LOAD DATA
-# =========================================
-df = pd.read_excel("claims_data.xlsx")
+The system processes two categories of data:
 
-# Convert to datetime
-df['Departure_Month'] = pd.to_datetime(df['Departure_Month'])
-df['Claim_Month'] = pd.to_datetime(df['Claim_Month'])
+1. Energy (Electricity, Natural Gas, District Heating, District Cooling)
+2. Water
 
-# Convert to monthly period (clean lag math)
-df['Departure_Month'] = df['Departure_Month'].dt.to_period('M')
-df['Claim_Month'] = df['Claim_Month'].dt.to_period('M')
+Each record contains:
 
-# =========================================
-# CREATE LAG COLUMN
-# =========================================
-df['Lag'] = (df['Claim_Month'] - df['Departure_Month']).apply(lambda x: x.n)
+* Country
+* Facility
+* Month
+* Source
+* Usage (Actual, Estimated, or Both)
+* Cost (Actual or Estimated)
 
-# Keep valid lag window
-df = df[df['Lag'].isin([0,1,2])]
+Core rules:
 
-# =========================================
-# BUILD DEVELOPMENT TRIANGLE
-# =========================================
-triangle = (
-    df.groupby(['Country','Departure_Month','Lag'])['Claim_Amount']
-    .sum()
-    .unstack(fill_value=0)
-)
+1. Energy Usage Logic:
 
-# Ensure lag columns exist
-for lag in [0,1,2]:
-    if lag not in triangle.columns:
-        triangle[lag] = 0
+* If only Actual exists → use Actual
+* If only Estimated exists → use Estimated
+* If both exist → use (Actual + Estimated) and mark as Estimated
 
-triangle = triangle[[0,1,2]]
+2. Energy Cost Logic:
 
-# =========================================
-# CALCULATE TOTAL & RATIOS
-# =========================================
-triangle['Total'] = triangle.sum(axis=1)
+* Cost is mandatory
+* If cost is missing → estimate it
+* Cost estimation must happen even if usage is estimated
 
-triangle = triangle[triangle['Total'] > 0]
+3. Water Usage Logic:
 
-ratio_triangle = triangle[[0,1,2]].div(triangle['Total'], axis=0)
+* If Actual exists → use Actual
+* If missing → must estimate (no fallback)
 
-# =========================================
-# WINSORIZED MEAN FUNCTION
-# =========================================
-def winsorized_mean(series, lower=0.05, upper=0.05):
-    w = winsorize(series, limits=[lower, upper])
-    return np.mean(w)
+4. Dynamic Estimation Month:
 
-# =========================================
-# FORECAST PER COUNTRY
-# =========================================
-results = []
+* User provides an InputMonth (e.g., March = 3)
+* Identify EnergyMaxMonth (latest month with energy data)
+* EstimationMonth = MIN(InputMonth, EnergyMaxMonth)
+* All estimations (especially water) should only be performed up to EstimationMonth
 
-countries = ratio_triangle.index.get_level_values(0).unique()
+5. Estimation Inputs:
 
-for country in countries:
-    
-    country_ratio = ratio_triangle.loc[country].sort_index()
-    country_triangle = triangle.loc[country].sort_index()
-    
-    latest_month = country_ratio.index.max()
-    
-    # Remove current incomplete month
-    history_ratio = country_ratio.loc[country_ratio.index < latest_month]
-    
-    # Use last 12 months
-    history_ratio = history_ratio.tail(12)
-    
-    if len(history_ratio) < 4:
-        continue
-    
-    # =========================================
-    # APPLY WINSORIZED MEAN
-    # =========================================
-    lag0_ratio = winsorized_mean(history_ratio[0])
-    lag1_ratio = winsorized_mean(history_ratio[1])
-    lag2_ratio = winsorized_mean(history_ratio[2])
-    
-    # Normalize ratios (important)
-    total_ratio = lag0_ratio + lag1_ratio + lag2_ratio
-    
-    lag0_ratio /= total_ratio
-    lag1_ratio /= total_ratio
-    lag2_ratio /= total_ratio
-    
-    # =========================================
-    # FORECAST CURRENT MONTH
-    # =========================================
-    current_data = country_triangle.loc[latest_month]
-    
-    lag0_actual = current_data[0]
-    
-    if lag0_ratio > 0:
-        estimated_total = lag0_actual / lag0_ratio
-    else:
-        estimated_total = lag0_actual
-    
-    forecast_lag1 = estimated_total * lag1_ratio
-    forecast_lag2 = estimated_total * lag2_ratio
-    
-    results.append([
-        country,
-        latest_month,
-        lag0_actual,
-        estimated_total,
-        forecast_lag1,
-        forecast_lag2,
-        lag0_ratio,
-        lag1_ratio,
-        lag2_ratio
-    ])
+* Previous year same month data
+* Headcount
+* Average presence
+* Floor area
+* Country-specific rules
 
-# =========================================
-# OUTPUT RESULT
-# =========================================
-forecast_df = pd.DataFrame(
-    results,
-    columns=[
-        "Country",
-        "Departure_Month",
-        "Current_Lag0_Actual",
-        "Estimated_Final_Total",
-        "Forecast_Lag1_NextMonth",
-        "Forecast_Lag2_MonthPlus2",
-        "Lag0_Ratio_Used",
-        "Lag1_Ratio_Used",
-        "Lag2_Ratio_Used"
-    ]
-)
+6. Estimation Approaches (multiple methods must be supported):
 
-print(forecast_df)
+* Previous year same month
+* Headcount scaling
+* Presence scaling
+* Floor area scaling
+* Reference facility scaling
 
-# Optional export
-forecast_df.to_excel("claims_forecast_output.xlsx", index=False)
-    
+Reference facility estimation:
+Estimated Value (Target Facility) =
+Reference Facility Usage
+× (Target Headcount / Reference Headcount)
+× (Target Presence / Reference Presence)
+× (Target Floor Area / Reference Floor Area)
+
+7. Multi-Method Comparison Framework:
+
+* Generate estimates using multiple methods (Est_A, Est_B, Est_C, etc.)
+* If Actual data is available:
+  → Calculate error = ABS(Actual - Estimate)
+  → Select method with lowest error
+* If Actual is not available:
+  → Use historical performance (past error rates) to choose best method
+* If no history exists:
+  → Apply rule-based selection (country/facility/source)
+
+8. Optional Enhancement:
+
+* Use weighted average of multiple estimation methods based on historical accuracy
+
+9. Edge Cases:
+
+* No energy data available → estimation should default to InputMonth
+* Missing previous year data → fallback to averages or alternative logic
+* Division by zero (headcount, presence, etc.) must be handled safely
+
+10. System Design Recommendation:
+
+* Separate modules/functions:
+
+  * GetEnergyMaxMonth
+  * GetEstimationMonth
+  * EstimateEnergy
+  * EstimateWater
+  * EstimateFromReference
+  * CompareEstimationMethods
+* Maintain lookup tables for:
+
+  * Country-specific estimation rules
+  * Historical performance of methods
+  * Previous year data
+
+The system should act as a rule-based estimation engine capable of:
+
+* Handling missing data intelligently
+* Applying multiple estimation strategies
+* Comparing and selecting optimal methods dynamically
+* Scaling across countries and facilities
+
+The final output should include:
+
+* Final Usage
+* Final Cost
+* Final Type (Actual / Estimated)
+* Selected Estimation Method (if applicable)
